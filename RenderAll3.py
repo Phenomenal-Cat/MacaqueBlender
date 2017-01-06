@@ -26,7 +26,7 @@ elif socket.gethostname().find("AidansMac")==0:
 
 MonkeyID            = 3
 RenderDir           = BlenderDir + "Renders/Monkey_%d" % (MonkeyID)
-SetupGeometry       = 1                                         # Specify which physical setup stimuli will be presented in
+SetupGeometry       = 2                                         # Specify which physical setup stimuli will be presented in
 
 #============ Set viewing geometry
 if SetupGeometry == 1:                          #============ For setup 3 with ASUS VG278H LCDs in a mirror stereoscope
@@ -36,7 +36,9 @@ if SetupGeometry == 1:                          #============ For setup 3 with A
 
 elif SetupGeometry == 2:                        #============ For setup 3 with LG 55EF9500 OLED 4K TV
 	ViewingDistance    = 60.0                                      # Set viewing distance (centimeters)
+    BezelSize          = 0.8*2;
 	MonitorSize        = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
+    MonitorSize        = MonitorSize -[BezelSize, BezelSize]       # Adjust for bezel
 	Resolution         = [3840, 2160]                              # Set render resolution per eye (pixels)
 
 elif SetupGeometry == 3:                        #============ For setup 1 with Ezio FlexScan LCD
