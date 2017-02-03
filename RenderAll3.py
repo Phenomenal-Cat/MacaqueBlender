@@ -20,8 +20,9 @@ if socket.gethostname().find("STIM_S4")==0:
 elif socket.gethostname().find("MH01918639MACDT")==0 :
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur.blend"
-elif socket.gethostname().find("AidansMac")==0:
-    BlenderDir      = "/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/"
+elif socket.gethostname().find("Aidans-Mac")==0:
+    #BlenderDir      = "/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/"
+    BlenderDir      = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/BlenderFiles/"
     BlenderFile     = "BlenderFiles/Geocorrect_fur.blend"
 
 MonkeyID            = 3
