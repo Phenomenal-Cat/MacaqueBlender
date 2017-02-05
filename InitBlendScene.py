@@ -7,26 +7,29 @@ is especially critical for stereoscopic 3D renders.
 Created on Thu Feb  2 22:22:56 2017
 @author: aidanmurphy (murphyap@mail.nih.gov)
 """
+import bpy
+import mathutils
+import math
+import numpy
 
-def InitBlendScene(SetupGeometry, StereoFormat)
 
-    import bpy
-    import mathutils
-    import math
-    import numpy
-    
+def InitBlendScene(SetupGeometry=2, StereoFormat=1):
+ 
     #============ Set viewing geometry
+    HemiProjection          = 0
+    SqueezeFrame            = 0
     if SetupGeometry == 1:                          #============ For SCNI setup 3 with ASUS VG278H LCDs in a mirror stereoscope
-        ViewingDistance    = 78.0 						    # Set viewing distance (centimeters)
-        MonitorSize        = [59.8, 33.5]  				          # Set physical screen dimensions (centimeters)
+        ViewingDistance    = 78.0 						            # Set viewing distance (centimeters)
+        MonitorSize        = [59.8, 33.5]  				             # Set physical screen dimensions (centimeters)
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 2:                        #============ For SCNI setup 3 with LG 55EF9500 OLED 4K TV
         ViewingDistance    = 60.0                                      # Set viewing distance (centimeters)
         BezelSize          = 0.8*2;                                    # Total monitor bezel (centimeters)
         MonitorSize        = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
-        MonitorSize        = MonitorSize -[BezelSize, BezelSize]       # Adjust for bezel
+        MonitorSize        = numpy.subtract(MonitorSize, [BezelSize, BezelSize])       # Adjust for bezel
         Resolution         = [3840, 2160]                              # Set render resolution per eye (pixels)
+        SqueezeFrame       = 1                                         # Horizontal squeee for SBS
     
     elif SetupGeometry == 3:                        #============ For SCNI setup 1 with Ezio FlexScan LCD
         ViewingDistance    = 40.0                                      # Set viewing distance (centimeters)
@@ -49,13 +52,13 @@ def InitBlendScene(SetupGeometry, StereoFormat)
     
     FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)        # Set camera horizontal field of view (radians)
     
-    
     #============ Set scene settings
     Scene                           = bpy.data.scenes['Scene']
     Scene.unit_settings.system      = 'METRIC'
     Scene.render.engine             = 'CYCLES'
     Scene.render.resolution_x       = Resolution[0]
     Scene.render.resolution_y       = Resolution[1]
+    Scene.render.resolution_percentage = 100
     Scene.render.use_stamp          = False							# Turn render stamps off
     Scene.render.display_mode       = 'SCREEN'
     Scene.cycles.film_transparent   = True
@@ -79,23 +82,22 @@ def InitBlendScene(SetupGeometry, StereoFormat)
         StereoSet.stereo_3d_format.display_mode         = 'ANAGLYPH'
         StereoSet.stereo_3d_format.anaglyph_type        = 'RED_CYAN'    
         
-            
-            
+                
     Cam2                                                = bpy.data.cameras["Camera"]
-    Cam2.stereo.interocular_distance                    = 0.0035                        # Set for average monkey IPD (meters)
+    Cam2.stereo.interocular_distance                    = 0.0035                        # Set for average Rhesus macaque IPD (meters)
     Cam2.stereo.convergence_distance                    = ViewingDistance/100           # Cameras converge at screen distance from viewer
     Cam2.stereo.convergence_mode                        = 'OFFAXIS'                     # Off-axis frusta are required for physically correct renders
     
     
     #============ Set camera settings
-    Cam                             = bpy.data.objects["Camera"]
-    Cam.location                    = mathutils.Vector((0, -ViewingDistance/100,0))
-    Scene.camera.data.angle         = FOV
-    Scene.camera.data.ortho_scale   = MonitorSize[0]/100
-    Scene.camera.data.type          = 'PERSP'    
+    Cam                                                 = bpy.data.objects["Camera"]
+    Cam.location                                        = mathutils.Vector((0, -ViewingDistance/100,0))
+    Scene.camera.data.angle                             = FOV
+    Scene.camera.data.ortho_scale                       = MonitorSize[0]/100
+    Scene.camera.data.type                              = 'PERSP'    
     if HemiProjection ==1:                
-        Scene.camera.data.type                      = 'PANO'
-        Scene.camera.data.cycles.panorama_type      = 'FISHEYE_EQUISOLID'  
+        Scene.camera.data.type                          = 'PANO'
+        Scene.camera.data.cycles.panorama_type          = 'FISHEYE_EQUISOLID'  
         
     
     #============ Set path tracing
@@ -113,4 +115,5 @@ def InitBlendScene(SetupGeometry, StereoFormat)
     bpy.context.scene.render.tile_x                     = 64
     bpy.context.scene.render.tile_y                     = 64
 
-    return;
+
+InitBlendScene()
