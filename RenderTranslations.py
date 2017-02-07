@@ -14,6 +14,7 @@ StereoFormat  = 1
 InitBlendScene(SetupGeometry, StereoFormat)
 
 RenderDir       = "/Volumes/Seagate Backup 1/Stimuli/Movies/MF3D/Translations/"
+FileFormat      = ".mpg"
 
 #============ Set motion parameters
 ClipDurations           = 2                         # Clip duration (seconds)
@@ -35,16 +36,38 @@ Scene.render.fps        = ClipFPS
 Root = bpy.data.objects['Root']
 
 
+# Body location
+# Body orientation  (az + el)
+# Head orientation  (az + el)
+# Gaze direction (az + el + dist)
+
+# Pupil dilation (%)
+# Brow raise (%)
+# Blink (%)
+# Jaw open (%)
+# Ears back (%)
+# - Bared-teeth fear grimace (%)
+# - Open mouth threat (%)
+# - Pursed-lip coo (%)
+# - Open mouth yawn (%)
+
+
+
 #============ Begin rendering loop
 for Az in TranslationAzimuths:
 
     for El in TranslationElevations:
 
-        Filename = "Macaque_Translation%d_az%d_el%d_exp%d.png" % (Az, El, Exp)
+        #========== Prepare new file and update user
+        Filename = "Macaque_Translation%d_az%d_el%d.%s" % (Az, El, FileFormat)
         print("Now rendering: " + Filename + " . . . (" + ClipDurationFrames + " frames)\n")
         bpy.context.scene.render.filepath = RenderDir + "/" + Filename
         bpy.ops.render.render(write_still=True, use_viewport=True)
-                        
+
+        #========== Calculate motion trajectory
+        
+
+        #========== Loop through frames                       
         for Frame in range(0, ClipDurationFrames):
             bpy.context.scene.frame_set(Frame)
 
@@ -52,7 +75,9 @@ for Az in TranslationAzimuths:
             
             Root.location = mathutils.Vector((PosX, PosY, PosZ))    # Move root object
 
-    
+print("Rendering completed!\n")
+
+
 
 
 for fl in FurLengths:
