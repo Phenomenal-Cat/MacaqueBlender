@@ -27,7 +27,7 @@ elif socket.gethostname().find("Aidans-Mac")==0:
 
 SetupGeometry       = 2                         # Specify which physical setup stimuli will be presented in
 StereoFormat        = 1
-InitBlendScene(SetupGeometry, StereoFormat )
+#InitBlendScene(SetupGeometry, StereoFormat )
 
 MonkeyID            = 3
 RenderDir           = BlenderDir + "Renders/Monkey_%d" % (MonkeyID)
@@ -45,7 +45,7 @@ ExpNo           = [0, 1, 2, 3, 4]
 ExpWeights      = numpy.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]])
 ExpMicroWeights = numpy.matrix([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
 mexp            = 0
-NoConditions    = len(ElAngles)*len(AzAngles)*len(Distances)*len(Scales)        # Calculate total number of conditions
+NoConditions    = len(ElAngles)*len(AzAngles)*len(Distances) #*len(Scales)        # Calculate total number of conditions
 msg             = "Total renders = %d" % NoConditions				
 print(msg)
 
@@ -58,7 +58,7 @@ head                = bpy.data.objects["HeaDRig"]
 
 
 
-bpy.ops.object.mode_set(mode='POSE')
+#bpy.ops.object.mode_set(mode='POSE')
 
     
 if ShowBody == 0:
@@ -69,10 +69,10 @@ if ShowBody == 0:
 # bpy.data.particles["ParticleSettings.003"].path_end = fl   # Set fur length (0-1)
 
 
-for exp in ExpressionNo:
+for exp in ExpNo:
 
     #======= Set primary expression
-    bpy.ops.object.mode_set(mode='POSE')
+    #bpy.ops.object.mode_set(mode='POSE')
     head.pose.bones['yawn'].location = mathutils.Vector((0,0,0.02*ExpWeights[exp,3]))     # Wide mouthed 'yawn' expression
     head.pose.bones['Kiss'].location = mathutils.Vector((0,0.02*ExpWeights[exp,2],0))     # Pursed lip 'coo' expression
     head.pose.bones['jaw'].location = mathutils.Vector((0,0,0.02*ExpWeights[exp,1]))      # Open-mouthed 'threat' expression
@@ -84,36 +84,39 @@ for exp in ExpressionNo:
     head.pose.bones['eyebrow'].location = mathutils.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2])) # Raise brow
     
 
-    for s in Scales:
-        head.scale = mathutils.Vector((s, s, s))
-        
-        for d in Distances:
-            head.location = mathutils.Vector((0, d/100, 0))
+    #for s in Scales:
+    #head.scale = mathutils.Vector((s, s, s))
+    s = 1
+    
+    for d in Distances:
+        body.location = mathutils.Vector((0, d/100, 0))
 
-            for el in ElAngles:
-                ElevationAngle = math.radians(el)
+        for el in ElAngles:
+            ElevationAngle = math.radians(el)
 
-                for az in AzAngles:
-                    AzimuthAngle = math.radians(az)
+            for az in AzAngles:
+                AzimuthAngle = math.radians(az)
 
-                    #=========== Rotate head/ body
-                    if RotateBody == 1:
-                        body.rotation_euler = (ElevationAngle, 0, AzimuthAngle)
-                    elif RotateBody ==0:
-                        bpy.ops.object.mode_set(mode='POSE')
-                        
-                        head.pose.bones['HeadTracker'].location = [];
+                #=========== Rotate head/ body
+                if RotateBody == 1:
+                    body.rotation_euler = (ElevationAngle, 0, AzimuthAngle)
+                elif RotateBody ==0:
+                    #bpy.ops.object.mode_set(mode='POSE')
+                    #HeadXYZ = HeadLookAt(ElevationAngle, AzimuthAngle)   
+                    HeadXYZ = mathutils.Vector((0, 1, 1))
+                    head.pose.bones['HeadTracker'].location = HeadXYZ;
 
-                    #=========== Rotate gaze
-                    if GazeAtCamera == 1:
-                        CamLocation = bpy.data.scenes["Scene"].camera.location
-                        head.pose.bones['EyesTracker'].location = mathutils.Vector((0, 0.1, 0.9))
 
-                    
+                #=========== Rotate gaze
+                if GazeAtCamera == 1:
+                    CamLocation = bpy.data.scenes["Scene"].camera.location
+                    head.pose.bones['EyesTracker'].location = mathutils.Vector((0, 0.1, 0.9))
 
-                    Filename = "Macaque_2017_%s_az%d_el%d_dist%d_sc%d.png" % (ExpressionStr[exp], az, el, d, s*100)
-                    print("Now rendering: " + Filename + " . . .\n")
-                    bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-                    bpy.ops.render.render(write_still=True, use_viewport=True)
+                
+
+                Filename = "Macaque_2017_%s_az%d_el%d_dist%d_sc%d.png" % (ExpStr[exp], az, el, d, s*100)
+                print("Now rendering: " + Filename + " . . .\n")
+                bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+                bpy.ops.render.render(write_still=True, use_viewport=True)
 
 print("Rendering completed!\n")

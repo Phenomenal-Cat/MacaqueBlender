@@ -24,6 +24,11 @@ def appendSpherical_np(xyz):
 
 
 def sph2cart(r, theta, phi):
+    XsqPlusYsq = m.sqrt(r)
+    x = m.tan(m.radians(phi))
+
+
+    return x, y, z
     
     
     
