@@ -102,7 +102,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     
     #============ Set path tracing
     bpy.context.scene.cycles.progressive                = 'PATH'
-    bpy.context.scene.cycles.samples                    = 50
+    bpy.context.scene.cycles.samples                    = 5
     bpy.context.scene.cycles.use_square_samples         = False
     bpy.context.scene.cycles.max_bounces                = 128
     bpy.context.scene.cycles.min_bounces                = 3
