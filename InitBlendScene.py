@@ -18,6 +18,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     #============ Set viewing geometry
     HemiProjection          = 0
     SqueezeFrame            = 0
+    AddPDmarker             = 0
     if SetupGeometry == 1:                          #============ For SCNI setup 3 with ASUS VG278H LCDs in a mirror stereoscope
         ViewingDistance    = 78.0 						            # Set viewing distance (centimeters)
         MonitorSize        = [59.8, 33.5]  				             # Set physical screen dimensions (centimeters)
@@ -50,7 +51,24 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     else:
     	print("Unknown setup!")
     
-    FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)        # Set camera horizontal field of view (radians)
+    FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)       # Set camera horizontal field of view (radians)
+    
+    #============ Add photodiode marker to scene
+    if AddPDmarker == 1:
+        MonitorCenter           = MonitorSize/2                                     # Caclulate physical screen center
+        PhotodiodeLocation      = (-MonitorCenter, 0)                               # Cacluclate screen position of photodiode (bottom left corner)
+        PhotodiodeRadius        = 0.01                                              # Set radius of photodiode marker (meters)
+        PhotodiodeOnColor       = [1 1 1]                                           # RGB value for photodiode 'on'
+        PhotodiodeOffColor      = [0 0 0]                                           # RGB value for photodiode 'off'
+        bpy.ops.mesh.primitive_circle_add(                                          # Add marker disk to scene                                  
+            vertices    = 100,
+            radius      = PhotodiodeRadius, 
+            fill_type   = 'TRIFAN',
+            view_align  = True,
+            location    = (-0.2,0,-0.1),
+            rotation    = (math.radians(90),0,0))
+        bpy.data.objects['Cirlce'].name = 'PDmarker'                                # rename photodiode marker object
+    
     
     #============ Set scene settings
     Scene                           = bpy.data.scenes['Scene']
@@ -115,5 +133,6 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     bpy.context.scene.render.tile_x                     = 64
     bpy.context.scene.render.tile_y                     = 64
 
+    return Photodiode
 
 InitBlendScene()
