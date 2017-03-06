@@ -56,9 +56,9 @@ def AddTargetObjects():
             d.name          = "Target %d" % sph  
             
             
-    bpy.context.scene.objects["Target %d"].select = True
+    bpy.context.scene.objects["Target %d" % sph].select = True
     bpy.ops.object.group_link(group="Targets")    
-    bpy.context.scene.objects["Target %d"].select = False     
+    bpy.context.scene.objects["Target %d"  % sph].select = False
     #bpy.context.scene.objects.active = d
     #bpy.ops.group.objects_add_active(group = "Targets")
     return SphereLocs
@@ -81,15 +81,28 @@ def EditTargetObjects(Add):
         
 def MonkeyLookAt(HeadLoc, GazeLoc):
     bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].location = mu.Vector((GazeLoc)) - bpy.data.objects["HeaDRig"].location
-    bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].location = mu.Vector((HeadLoc)) - bpy.data.objects["HeaDRig"].location
+    bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].location = mu.Vector((HeadLoc[0],HeadLoc[2],HeadLoc[1])) - bpy.data.objects["HeaDRig"].location
         
         
+        
+def RenderAllViews(Locs):
+    GazeLoc = (0, 0.03, 0.2)
+    RenderDir = 'P:\murphya\Blender\Renders\CuedAttention'
+    for l in range(0, len(Locs)):
+        MonkeyLookAt(Locs[l], GazeLoc)
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        Filename = "CuedLocation_V1_headLoc%s.png" % (l)
+        print("Now rendering: " + Filename + " . . .\n")
+        #bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+        #bpy.ops.render.render(write_still=True, use_viewport=True)
+    
         
 #RemoveTargetObjects()
-#Locs = AddTargetObjects()
+Locs = AddTargetObjects()
+RenderAllViews(Locs)
 
-Loc = [0.15,0.2,0]
-MonkeyLookAt(Loc, Loc)
+#Loc = [0.15,0.2,0]
+#MonkeyLookAt(Locs[3], Locs[3])
     
 
 
