@@ -14,7 +14,7 @@ def AddTargetObjects():
     #================= Set target appearance
     SphereRad       = 0.01                                              # Set sphere radius (meters)
     SphereDepth     = -0.2
-    SphereEcc       = 0.15
+    SphereEcc       = 0.12
     SphereNumber    = 8
     SpherePolAng    = np.linspace(0,2*math.pi, SphereNumber+1)
     SphereLocs      = np.zeros((SphereNumber,3))
@@ -33,6 +33,11 @@ def AddTargetObjects():
         mat.specular_intensity  = 0                                         # Set intensity of specular reflection (0-1)
     elif not(all(AllMats)):
         mat = AllMats[0]
+        
+    #============ Add texture to target surfaces
+    heightTex           = bpy.data.textures.new('TargetTex', type = 'CLOUDS')
+    heightTex.noise_scale = 0.002
+
 
     #================= Create targets
     bpy.ops.group.create(name="Targets")
@@ -49,6 +54,9 @@ def AddTargetObjects():
                 rotation        = (0,0,0))
             bpy.data.objects['Icosphere'].active_material   = mat                           # Set target color
             bpy.data.objects['Icosphere'].name              = "Target %d" % sph             # Rename object as target ID
+            dispMod             = bpy.context.scene.objects["Target 0"].modifiers.new("Displace", type='DISPLACE')
+            dispMod.texture     = heightTex
+            dispMod.strength    = 0.001
         elif sph  > 0:
             d = bpy.data.objects['Target 0'].copy()
             bpy.context.scene.objects.link(d)
@@ -87,14 +95,15 @@ def MonkeyLookAt(HeadLoc, GazeLoc):
         
 def RenderAllViews(Locs):
     GazeLoc = (0, 0.03, 0.2)
-    RenderDir = 'P:\murphya\Blender\Renders\CuedAttention'
+    #RenderDir = 'P:\murphya\Blender\Renders\CuedAttention'
+    RenderDir = '/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/Renders/CuedLocations'
     for l in range(0, len(Locs)):
         MonkeyLookAt(Locs[l], GazeLoc)
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         Filename = "CuedLocation_V1_headLoc%s.png" % (l)
         print("Now rendering: " + Filename + " . . .\n")
-        #bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-        #bpy.ops.render.render(write_still=True, use_viewport=True)
+        bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+        bpy.ops.render.render(write_still=True, use_viewport=True)
     
         
 #RemoveTargetObjects()
@@ -104,6 +113,7 @@ RenderAllViews(Locs)
 #Loc = [0.15,0.2,0]
 #MonkeyLookAt(Locs[3], Locs[3])
     
+
 
 
     
