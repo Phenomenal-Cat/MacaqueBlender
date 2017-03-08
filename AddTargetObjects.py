@@ -88,19 +88,25 @@ def EditTargetObjects(Add):
         RemoveTargetObjects()
         
 def MonkeyLookAt(HeadLoc, GazeLoc):
-    bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].location = mu.Vector((GazeLoc)) - bpy.data.objects["HeaDRig"].location
-    bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].location = mu.Vector((HeadLoc[0],HeadLoc[2],HeadLoc[1])) - bpy.data.objects["HeaDRig"].location
+    bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].location = mu.Vector((GazeLoc)) #- bpy.data.objects["HeaDRig"].location
+    bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].location = mu.Vector((HeadLoc[0],HeadLoc[2],HeadLoc[1])) #- bpy.data.objects["HeaDRig"].location
         
         
         
 def RenderAllViews(Locs):
-    GazeLoc = (0, 0.03, 0.2)
+    Congruent = 0
+    
     #RenderDir = 'P:\murphya\Blender\Renders\CuedAttention'
     RenderDir = '/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/Renders/CuedLocations'
     for l in range(0, len(Locs)):
-        MonkeyLookAt(Locs[l], GazeLoc)
+        if Congruent == 1:
+            GazeLoc = (0, 0.03, 0.2)
+            MonkeyLookAt(Locs[l], GazeLoc)
+        elif Congruent == 0:
+            MonkeyLookAt((0,-0.2,0), (Locs[l][0], Locs[l][2], 0.1) )
+            
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        Filename = "CuedLocation_V1_headLoc%s.png" % (l)
+        Filename = "CuedLocation_V3_headLoc%s.png" % (l)
         print("Now rendering: " + Filename + " . . .\n")
         bpy.context.scene.render.filepath = RenderDir + "/" + Filename
         bpy.ops.render.render(write_still=True, use_viewport=True)
@@ -108,6 +114,9 @@ def RenderAllViews(Locs):
         
 #RemoveTargetObjects()
 Locs = AddTargetObjects()
+
+#bpy.data.objects["HeaDRig"].pose.bones['blink'].location = mu.Vector((0,0,0.007))   # Close eye lids (blink)
+
 RenderAllViews(Locs)
 
 #Loc = [0.15,0.2,0]
