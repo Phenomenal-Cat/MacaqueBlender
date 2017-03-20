@@ -25,7 +25,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 2:                        #============ For SCNI setup 3 with LG 55EF9500 OLED 4K TV
-        ViewingDistance    = 60.0                                      # Set viewing distance (centimeters)
+        ViewingDistance    = 90.0                                      # Set viewing distance (centimeters)
         BezelSize          = 0.8*2;                                    # Total monitor bezel (centimeters)
         MonitorSize        = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
         MonitorSize        = numpy.subtract(MonitorSize, [BezelSize, BezelSize])       # Adjust for bezel
@@ -55,20 +55,20 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     
     #============ Add photodiode marker to scene
     if AddPDmarker == 1:
-        MonitorCenter           = MonitorSize/2                                     # Caclulate physical screen center
-        PhotodiodeLocation      = (-MonitorCenter, 0)                               # Cacluclate screen position of photodiode (bottom left corner)
+        MonitorCenter           = numpy.divide(MonitorSize,2)                       # Caclulate physical screen center
         PhotodiodeRadius        = 0.01                                              # Set radius of photodiode marker (meters)
-        PhotodiodeOnColor       = [1 1 1]                                           # RGB value for photodiode 'on'
-        PhotodiodeOffColor      = [0 0 0]                                           # RGB value for photodiode 'off'
+        PhotodiodeOnColor       = [1, 1, 1]                                         # RGB value for photodiode 'on'
+        PhotodiodeOffColor      = [0, 0, 0]                                         # RGB value for photodiode 'off'
+        PhotodiodeLocation      = ((-MonitorCenter[0]/100 + PhotodiodeRadius, -MonitorCenter[1]/100 +2*PhotodiodeRadius, 0))    # Cacluclate screen position of photodiode (bottom left corner in meters)
         bpy.ops.mesh.primitive_circle_add(                                          # Add marker disk to scene                                  
             vertices    = 100,
             radius      = PhotodiodeRadius, 
             fill_type   = 'TRIFAN',
             view_align  = True,
-            location    = (-0.2,0,-0.1),
+            location    = (PhotodiodeLocation[0], PhotodiodeLocation[2], PhotodiodeLocation[1]),
             rotation    = (math.radians(90),0,0))
-        bpy.data.objects['Cirlce'].name = 'PDmarker'                                # rename photodiode marker object
-    
+        bpy.data.objects['Circle'].name = 'PDmarker'                                # rename photodiode marker object
+        
     
     #============ Set scene settings
     Scene                           = bpy.data.scenes['Scene']
@@ -120,7 +120,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     
     #============ Set path tracing
     bpy.context.scene.cycles.progressive                = 'PATH'
-    bpy.context.scene.cycles.samples                    = 5
+    bpy.context.scene.cycles.samples                    = 50
     bpy.context.scene.cycles.use_square_samples         = False
     bpy.context.scene.cycles.max_bounces                = 128
     bpy.context.scene.cycles.min_bounces                = 3
@@ -133,6 +133,6 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     bpy.context.scene.render.tile_x                     = 64
     bpy.context.scene.render.tile_y                     = 64
 
-    return Photodiode
+    return AddPDmarker
 
 InitBlendScene()

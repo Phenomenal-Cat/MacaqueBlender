@@ -48,7 +48,8 @@ RenderDir           = BlenderDir + "Renders"
 
 #============ Set rendering parameters						
 ElAngles        = [-30, 0, 30]                                                  # Set elevation angles (degrees)
-AzAngles        = [-90, -60, -30, 0, 30, 60, 90]                                # Set azimuth angles (degrees)
+AzAngles        = [-120, -150, -180, 120, 150]  
+#AzAngles        = [-90, -60, -30, 0, 30, 60, 90]                                # Set azimuth angles (degrees)
 Distances       = [-20, 0, 20] 						        # Set object distance from origin (centimeters)
 #Scales          = [0.8, 1, 1.2]                                             # Physical scale of object (proportion)
 Scales          = 1
