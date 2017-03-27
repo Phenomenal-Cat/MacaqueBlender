@@ -16,7 +16,7 @@ def AddTargetObjects():
     AddTex          = 0
     SphereRad       = 0.01                                              # Set sphere radius (meters)
     SphereDepth     = -0.2
-    SphereEcc       = 0.12
+    SphereEcc       = 0.10
     SphereNumber    = 8
     SpherePolAng    = np.linspace(0,2*math.pi, SphereNumber+1)
     SphereLocs      = np.zeros((SphereNumber,3))
@@ -124,11 +124,15 @@ def RenderAllViewsStill(Locs):
 def RenderAllViewsAnimated(Locs):
     
     #================ Set animation parameters
-    Congruent                               = 1
+    Congruent                               = 0
+    FPS                                     = 60
     ClipDuration                            = 2                 # Duration of each animation (seconds)   
-    bpy.data.scenes["Scene"].render.fps     = 60                # Set frame rate (Hz)  
+    FixDuration                             = 0.5               # Duration avatar fixates target for (seconds)
+    FixStartFrame                           = np.round((ClipDuration-FixDuration)/2*FPS)
+    FixEndFrame                             = np.round(FixStartFrame + (FixDuration*FPS))
+    bpy.data.scenes["Scene"].render.fps     = FPS                # Set frame rate (Hz)  
     bpy.data.scenes["Scene"].frame_start    = 1
-    bpy.data.scenes["Scene"].frame_end      = (ClipDuration*bpy.data.scenes["Scene"].render.fps)+1
+    bpy.data.scenes["Scene"].frame_end      = (ClipDuration*bpy.data.scenes["Scene"].render.fps)+1 
     bpy.data.scenes["Scene"].frame_step     = 1
     bpy.data.scenes["Scene"].render.image_settings.file_format = 'PNG' 
 
@@ -142,28 +146,33 @@ def RenderAllViewsAnimated(Locs):
         RenderDir = 'P:\murphya\Blender\Renders\CuedAttention\AnimationFrames'
         
     #================ Loop through targets    
-    for l in range(0, len(Locs)):
+    for l in range(1, len(Locs)):
         
         #============ Set default gaze/head position for frame 1
         bpy.context.scene.frame_set(1)
-        GazeLoc         = (0, 0.03, 0.2)
+        GazeLoc         = (0, 0.03, 0.8)
         DefaultHeadLoc  = (0, 0, 0)
         MonkeyLookAt(DefaultHeadLoc, GazeLoc)
         bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].keyframe_insert(data_path = "location")
         bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].keyframe_insert(data_path = "location")
         
         #============ Set target gaze/head position
-        bpy.context.scene.frame_set(np.round(bpy.data.scenes["Scene"].frame_end/2))
-        if Congruent == 1:
-            MonkeyLookAt(Locs[l], GazeLoc)
-            bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].keyframe_insert(data_path = "location")
-            bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].keyframe_insert(data_path = "location")
-            
-        elif Congruent == 0:
-            bpy.data.objects["HeaDRig"].pose.bones['blink'].location = mu.Vector((0,0,0))   # Open eye lids 
-            MonkeyLookAt(Locs[l], GazeLoc)
-            bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].keyframe_insert(data_path = "location")
-            bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].keyframe_insert(data_path = "location")
+        for FixPoint in range(0,1):
+            if FixPoint == 0:
+                bpy.context.scene.frame_set(FixStartFrame)
+            elif FixPoint == 1:
+                bpy.context.scene.frame_set(FixEndFrame)
+                
+            if Congruent == 1:
+                MonkeyLookAt(Locs[l], GazeLoc)
+                bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].keyframe_insert(data_path = "location")
+                bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].keyframe_insert(data_path = "location")
+                
+            elif Congruent == 0:
+                bpy.data.objects["HeaDRig"].pose.bones['blink'].location = mu.Vector((0,0,0))   # Open eye lids 
+                MonkeyLookAt(DefaultHeadLoc, Locs[l])
+                bpy.data.objects["HeaDRig"].pose.bones['EyesTracker'].keyframe_insert(data_path = "location")
+                bpy.data.objects["HeaDRig"].pose.bones['HeadTracker'].keyframe_insert(data_path = "location")
 
         #============ Return to default gaze/head position for final frame
         bpy.context.scene.frame_set(bpy.data.scenes["Scene"].frame_end)
@@ -173,9 +182,9 @@ def RenderAllViewsAnimated(Locs):
         
         #============ Render keyframe sequence
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        for f in range(1, bpy.data.scenes["Scene"].frame_end):
+        for f in range(bpy.data.scenes["Scene"].frame_start, bpy.data.scenes["Scene"].frame_end):
             bpy.context.scene.frame_set( f )                                # Set current frame
-            Filename = "LookAtLocation_Target%s_Frame%03d.png" % (l, f)
+            Filename = "LookAtLocation_Eyes_Target%s_Frame%03d.png" % (l, f)
             print("Now rendering: " + Filename + " . . .\n")
             bpy.context.scene.render.filepath = RenderDir + "/" + Filename
             bpy.ops.render.render(write_still=True, use_viewport=True)
