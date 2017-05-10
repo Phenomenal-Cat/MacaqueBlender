@@ -22,7 +22,14 @@ def HeadLookAt(El, Az):
     Y   = np.sin(math.radians(El))*Rad
     HeadXYZ = mu.Vector((X, Y, Z))
     return HeadXYZ
-    
+
+def GazeLookAt(El, Az):
+    Rad = 1
+    Z   = np.cos(math.radians(Az))*np.cos(math.radians(El))*Rad
+    X   = np.sin(math.radians(Az))*np.cos(math.radians(El))*Rad
+    Y   = np.sin(math.radians(El))*Rad
+    HeadXYZ = mu.Vector((X, Y, Z))
+    return HeadXYZ    
     
 
 if socket.gethostname().find("STIM_S4")==0:
@@ -42,15 +49,16 @@ SetupGeometry       = 2                         # Specify which physical setup s
 StereoFormat        = 1
 #InitBlend(SetupGeometry, StereoFormat )
 
-MonkeyID            = 3
+MonkeyID            = 0
 RenderDir           = BlenderDir + "Renders"
 
 
 #============ Set rendering parameters						
 ElAngles        = [-30, 0, 30]                                                  # Set elevation angles (degrees)
-AzAngles        = [-120, -150, -180, 120, 150]  
-#AzAngles        = [-90, -60, -30, 0, 30, 60, 90]                                # Set azimuth angles (degrees)
-Distances       = [-20, 0, 20] 						        # Set object distance from origin (centimeters)
+#AzAngles        = [-120, -150, -180, 120, 150]  
+AzAngles        = [-90, -60, -30, 0, 30, 60, 90]                                # Set azimuth angles (degrees)
+#Distances       = [-20, 0, 20] 						        # Set object distance from origin (centimeters)
+Distances       = [0]
 #Scales          = [0.8, 1, 1.2]                                             # Physical scale of object (proportion)
 Scales          = 1
 FurLengths      = [0.7]                                                         # Set relative length of fur (0-1)
@@ -66,6 +74,7 @@ print(msg)
 ShowBody            = 1;
 RotateBody          = 0;                                # 0 = rotate head relative to body; 1 = rotate whole body
 GazeAtCamera        = 1;                                # Update gaze direction to maintain eye contact?
+MoveGazeOnly        = 1;
 body                = bpy.data.objects["Root"]
 body.rotation_mode  = 'XYZ'
 OrigBodyLoc         = body.location 
@@ -115,22 +124,27 @@ for exp in ExpNo:
                     body.rotation_euler = (math.radians(el), 0, math.radians(az))
                     
                 elif RotateBody ==0:
-                    #bpy.ops.object.mode_set(mode='POSE')
-                    HeadXYZ = HeadLookAt(el, az)
-                    head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+                    if MoveGazeOnly == 0:
+                        #bpy.ops.object.mode_set(mode='POSE')
+                        HeadXYZ = HeadLookAt(el, az)
+                        head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
 
 
                 #=========== Rotate gaze
                 if GazeAtCamera == 1:
                     CamLocation = bpy.data.scenes["Scene"].camera.location
                     head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
+                    
+                if MoveGazeOnly == 1:
+                    GazeXYZ = GazeLookAt(el, az)
+                    head.pose.bones['EyesTracker'].location = GazeXYZ
 
                 
                 bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
                 Filename = "Macaque_2017_head_%s_az%d_el%d_dist%d_sc%d.png" % (ExpStr[exp], az, el, d, s*100)
                 print("Now rendering: " + Filename + " . . .\n")
-                bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-                bpy.ops.render.render(write_still=True, use_viewport=True)
+                #bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+                #bpy.ops.render.render(write_still=True, use_viewport=True)
 
 print("Rendering completed!\n")
 
