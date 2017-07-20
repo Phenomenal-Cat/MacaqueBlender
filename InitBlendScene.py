@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=2, StereoFormat=1):
+def InitBlendScene(SetupGeometry=3, StereoFormat=1):
  
     #============ Set viewing geometry
     HemiProjection          = 0
@@ -32,10 +32,12 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         Resolution         = [3840, 2160]                              # Set render resolution per eye (pixels)
         SqueezeFrame       = 1                                         # Horizontal squeee for SBS
     
-    elif SetupGeometry == 3:                        #============ For SCNI setup 1 with Ezio FlexScan LCD
-        ViewingDistance    = 40.0                                      # Set viewing distance (centimeters)
+    elif SetupGeometry == 3:                        #============ For SCNI setup 2 with Ezio FlexScan LCD
+        ViewingDistance    = 100.0                                     # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1280, 1024]                              # Set render resolution per eye (pixels)
+        StereoFormat       = 1
+        SqueezeFrame       = 0
      
     elif SetupGeometry == 4:                        #============ For Epson projectors in NIF 4.7T vertical MRI scanner
         ViewingDistance    = 48.0                                      # Set viewing distance (centimeters)
@@ -80,13 +82,14 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
     Scene.render.use_stamp          = False							# Turn render stamps off
     Scene.render.display_mode       = 'SCREEN'
     Scene.cycles.film_transparent   = True
+    Scene.render.image_settings.color_mode = 'RGBA'
     
     #============ Set stereoscopic 3D settings
     StereoSet                                           = bpy.context.scene.render.image_settings
     if StereoFormat == 0:                                                   #=========== 2D rendering
         Scene.render.use_multiview                      = False
-        Scene.render.views_format                       = 'INDIVIDUAL'
-        StereoSet.views_format                          = 'INDIVIDUAL' 
+        # Scene.render.views_format                       = 'INDIVIDUAL'
+        # StereoSet.views_format                          = 'MULTIVIEW' 
     elif StereoFormat == 1:                                                 #=========== Side-by-side stereo rendering
         Scene.render.use_multiview                      = True
         Scene.render.views_format                       = 'STEREO_3D'
@@ -95,6 +98,8 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         StereoSet.stereo_3d_format.use_sidebyside_crosseyed = False                     # Do not switch eyes
         if SqueezeFrame == 1:
             StereoSet.stereo_3d_format.use_squeezed_frame       = True                  # 
+        elif SqueezeFrame == 0:
+            StereoSet.stereo_3d_format.use_squeezed_frame       = False
             
     elif StereoFormat == 2:                                                 #=========== Anaglyph rendering
         StereoSet.stereo_3d_format.display_mode         = 'ANAGLYPH'

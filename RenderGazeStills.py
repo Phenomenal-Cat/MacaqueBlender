@@ -53,7 +53,7 @@ elif socket.gethostname().find("MH01918639MACDT")==0 :
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur.blend"
 elif socket.gethostname().find("DESKTOP-5PBDLG6")==0 :
-    BlenderDir      = "P:/murphya/MacaqueFace3D/GazeExperiments/Renders/"
+    BlenderDir      = "P:/murphya/MacaqueFace3D/GazeExperiments/Renders/Experiment7_v2/"
 elif socket.gethostname().find("Aidans-Mac")==0:
     #BlenderDir      = "/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/"
     BlenderDir      = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/BlenderFiles/"
@@ -62,27 +62,29 @@ elif socket.gethostname().find("Aidans-Mac")==0:
 SetupGeometry       = 2                         # Specify which physical setup stimuli will be presented in
 StereoFormat        = 1
 #InitBlend(SetupGeometry, StereoFormat )
-RenderDir           = BlenderDir + "Renders"
+RenderDir           = BlenderDir # + "Renders"
 
 
 #============ Set rendering parameters						
-GazeElAngles    = [0] #[-20, -10,  0, 10, 20] #[0]                                   # Set elevation angles (degrees)
-GazeAzAngles    = [-25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25]                # Set azimuth angles (degrees)
-HeadElAngles    = GazeElAngles
-HeadAzAngles    = GazeAzAngles
+#GazeElAngles    = [-15, 0, 15] #[0]                                         # Set elevation angles (degrees)
+#GazeAzAngles    = [-30, -15, 0, 15, 30]                                     # Set azimuth angles (degrees)
+HeadElAngles    = [-15, 0, 15]
+HeadAzAngles    = [-30, -15, 0, 15, 30]  
+GazeElAngles    = [0]
+GazeAzAngles    = [0] 
 #Distances       = [-20, 0, 20] 						                          # Set object distance from origin (centimeters)
 Distances       = [0]
 Scales          = [1]                                                             # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                         # Set relative length of fur (0-1)
 ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]
-ExpNo           = [0] #[0, 1, 2, 3, 4]
+ExpNo           = [0] #[0, 1, 2, 3, 4]                                          # Which expressions to render
 ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]])
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
 mexp            = 0
 
-ShowBody            = 1;                                
-IncludeEyesOnly     = 1;                                # Include eyes only condition? 
-InfiniteVergence    = 0;                                # Fixate (vergence) at infinity?
+ShowBody            = 1;                                # Render body?
+IncludeEyesOnly     = 0;                                # Include eyes only condition? 
+InfiniteVergence    = 0;                                # Fixate (vergence) at infinity? 0 = camera distance
 RotateBody          = 0;                                # 0 = rotate head relative to body; 1 = rotate whole body
 GazeAtCamera        = 0;                                # Update gaze direction to maintain eye contact?
 NoConditions        = len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances) #*len(Scales)        # Calculate total number of conditions
@@ -109,22 +111,40 @@ if ShowBody == 0:
 # head.pose.bones['Head'].constraints['IK'].mute                = True          # Turn off constraints on head orientation
 # head.pose.bones['HeadTracker'].constraints['IK'].influence    = 0             
 
-Conditions = [0]
+Conditions = [3]
 
 #========================== Begin rendering loop
 for cond in Conditions:
     if cond == 1:   #====================== Render eyes only
         bpy.data.objects['BodyZremesh2'].hide_render                = True      # Hide body from rendering
-        bpy.data.objects['MacaqueHeadNG_1expressions1'].hide_render = True 
-        bpy.data.objects['TeethDown'].hide_render                   = True  
+        # bpy.data.objects['MacaqueHeadNG_1expressions1'].hide_render = True 
+        bpy.data.objects['TeethDown'].hide_render                   = True      # Hide internal mouth components
         bpy.data.objects['TeethUp'].hide_render                     = True  
         bpy.data.objects['Tongue_1'].hide_render                    = True  
+        Head = bpy.data.objects['MacaqueHeadNG_1expressions1']
+        Head.modifiers['Mouth hair'].show_render                    = False     # Turn off all facial hair
+        Head.modifiers['ears'].show_render                          = False
+        Head.modifiers['eyebrows'].show_render                      = False
+        Head.modifiers['fuzz'].show_render                          = False
+        Head.modifiers['mustaches'].show_render                     = False
+        Head.modifiers['eyelashes'].show_render                     = False
+        Head.modifiers['basefur'].show_render                       = False
+        mat     = bpy.data.materials.get('HoldoutMat')                          # Get holdout material
+        if mat is None:                                                         # If holdout material doesn't exist yet...
+            mat     = bpy.data.materials.new(name='HoldoutMat')                 # Create holdout material
+            nodes   = mat.node_tree.nodes                                       # Get material nodes
+            holdout = nodes.get('Holdout')                                      # Get holdout node
+            if holdout is None:
+                holdout = nodes.new
+        Head.active_material = mat                                              # Apply holdout material to head mesh
         
-    elif cond == 0: #====================== Render full face
+        
+    elif cond == 0 or cond == 2: #====================== Render full face
         bpy.data.objects['MacaqueHeadNG_1expressions1'].hide_render = False
         bpy.data.objects['TeethDown'].hide_render                   = False
         bpy.data.objects['TeethUp'].hide_render                     = False
         bpy.data.objects['Tongue_1'].hide_render                    = False
+
 
     for exp in ExpNo:
 
@@ -140,6 +160,14 @@ for cond in Conditions:
         head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))        # Retract ears
         head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))       # Raise brow
         head.pose.bones['EyesTracker'].scale = mu.Vector((0, 0.2+0.8*ExpMicroWeights[mexp, 3], 0))  # Pupil dilation/ constriction
+
+        #======= condition 2 = eyes closed
+        if cond == 2:
+            head.pose.bones['blink'].location           = mu.Vector((0,0,0.02))
+            bpy.data.objects['CorneaL'].hide_render     = True
+            bpy.data.objects['CorneaR'].hide_render     = True
+            bpy.data.objects['EyeL'].hide_render        = True
+            bpy.data.objects['EyeR'].hide_render        = True
 
         #for s in Scales:
         #head.scale = mu.Vector((s, s, s))
@@ -186,7 +214,10 @@ for cond in Conditions:
                             if cond == 0:
                                 Filename = "MacaqueGaze_%s_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d.png" % (ExpStr[exp], Haz, Hel, Gaz, Gel, d)
                             elif cond == 1:
-                                Filename = "MacaqueGaze_Eyes_%s_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d.png" % (ExpStr[exp], Haz, Hel, Gaz, Gel, d)
+                                Filename = "MacaqueGaze_EyesOnly_%s_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d.png" % (ExpStr[exp], Haz, Hel, Gaz, Gel, d)
+                            elif cond == 2:
+                                Filename = "MacaqueGaze_EyesClosed_%s_Haz%d_Hel%d_GazNaN_GelNan_dist%d.png" % (ExpStr[exp], Haz, Hel, d)
+
                             print("Now rendering: " + Filename + " . . .\n")
                             bpy.context.scene.render.filepath = RenderDir + "/" + Filename
                             bpy.ops.render.render(write_still=True, use_viewport=True)
