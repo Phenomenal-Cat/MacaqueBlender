@@ -16,19 +16,20 @@ import numpy
 def InitBlendScene(SetupGeometry=3, StereoFormat=1):
  
     #============ Set viewing geometry
+    global MonitorSize
     HemiProjection          = 0
     SqueezeFrame            = 0
     AddPDmarker             = 0
     if SetupGeometry == 1:                          #============ For SCNI setup 3 with ASUS VG278H LCDs in a mirror stereoscope
-        ViewingDistance    = 78.0 						            # Set viewing distance (centimeters)
-        MonitorSize        = [59.8, 33.5]  				             # Set physical screen dimensions (centimeters)
+        ViewingDistance    = 78.0 						               # Set viewing distance (centimeters)
+        MonitorSize        = [59.8, 33.5]  				               # Set physical screen dimensions (centimeters)
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 2:                        #============ For SCNI setup 3 with LG 55EF9500 OLED 4K TV
         ViewingDistance    = 90.0                                      # Set viewing distance (centimeters)
         BezelSize          = 0.8*2;                                    # Total monitor bezel (centimeters)
-        MonitorSize        = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
-        MonitorSize        = numpy.subtract(MonitorSize, [BezelSize, BezelSize])       # Adjust for bezel
+        MonitorSizeA       = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
+        MonitorSize        = numpy.subtract(MonitorSizeA, [BezelSize, BezelSize])       # Adjust for bezel
         Resolution         = [3840, 2160]                              # Set render resolution per eye (pixels)
         SqueezeFrame       = 1                                         # Horizontal squeee for SBS
     
@@ -48,10 +49,16 @@ def InitBlendScene(SetupGeometry=3, StereoFormat=1):
         HemiProjection     = 1
         ViewingDistance    = 100.0                                     # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
-        Resolution         = [1920, 1920]                              # Set render resolution per eye (pixels
+        Resolution         = [1920, 1920]                              # Set render resolution per eye (pixels)
     
+    elif SetupGeometry == 6:                        #============ For NIF vertical bore 4.7T using Epson projectors
+        ViewingDistance    = 52.0                                       # Set viewing distance (centimeters)
+        MonitorSize        = [25.2, 16.0]                               # Set physical screen dimensions (centimeters)
+        Resolution         = [1080, 1920]                               # Set render resolution per eye (pixels) 
+        
     else:
     	print("Unknown setup!")
+        break
     
     FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)       # Set camera horizontal field of view (radians)
     
@@ -73,46 +80,46 @@ def InitBlendScene(SetupGeometry=3, StereoFormat=1):
         
     
     #============ Set scene settings
-    Scene                           = bpy.data.scenes['Scene']
-    Scene.unit_settings.system      = 'METRIC'
-    Scene.render.engine             = 'CYCLES'
-    Scene.render.resolution_x       = Resolution[0]
-    Scene.render.resolution_y       = Resolution[1]
-    Scene.render.resolution_percentage = 100
-    Scene.render.use_stamp          = False							# Turn render stamps off
-    Scene.render.display_mode       = 'SCREEN'
-    Scene.cycles.film_transparent   = True
+    Scene                               = bpy.data.scenes['Scene']
+    Scene.unit_settings.system          = 'METRIC'
+    Scene.render.engine                 = 'CYCLES'
+    Scene.render.resolution_x           = Resolution[0]
+    Scene.render.resolution_y           = Resolution[1]
+    Scene.render.resolution_percentage  = 100
+    Scene.render.use_stamp              = False							            # Turn render stamps off
+    Scene.render.display_mode           = 'SCREEN'
+    Scene.cycles.film_transparent       = True
     Scene.render.image_settings.color_mode = 'RGBA'
     
     #============ Set stereoscopic 3D settings
     StereoSet                                           = bpy.context.scene.render.image_settings
-    if StereoFormat == 0:                                                   #=========== 2D rendering
-        Scene.render.use_multiview                      = False
-        # Scene.render.views_format                       = 'INDIVIDUAL'
-        # StereoSet.views_format                          = 'MULTIVIEW' 
-    elif StereoFormat == 1:                                                 #=========== Side-by-side stereo rendering
-        Scene.render.use_multiview                      = True
-        Scene.render.views_format                       = 'STEREO_3D'
-        StereoSet.views_format                          = 'STEREO_3D'   
-        StereoSet.stereo_3d_format.display_mode         = 'SIDEBYSIDE'
-        StereoSet.stereo_3d_format.use_sidebyside_crosseyed = False                     # Do not switch eyes
+    if StereoFormat == 0:                               #=========== 2D rendering
+        Scene.render.use_multiview                              = False
+        # Scene.render.views_format                             = 'INDIVIDUAL'
+        # StereoSet.views_format                                = 'MULTIVIEW' 
+        
+    elif StereoFormat == 1:                             #=========== Side-by-side stereo rendering
+        Scene.render.use_multiview                              = True
+        Scene.render.views_format                               = 'STEREO_3D'
+        StereoSet.views_format                                  = 'STEREO_3D'   
+        StereoSet.stereo_3d_format.display_mode                 = 'SIDEBYSIDE'
+        StereoSet.stereo_3d_format.use_sidebyside_crosseyed     = False             # Do not switch eyes
         if SqueezeFrame == 1:
             StereoSet.stereo_3d_format.use_squeezed_frame       = True                  # 
         elif SqueezeFrame == 0:
             StereoSet.stereo_3d_format.use_squeezed_frame       = False
             
-    elif StereoFormat == 2:                                                 #=========== Anaglyph rendering
+    elif StereoFormat == 2:                             #=========== Anaglyph rendering
         StereoSet.stereo_3d_format.display_mode         = 'ANAGLYPH'
         StereoSet.stereo_3d_format.anaglyph_type        = 'RED_CYAN'    
         
                 
+    #============ Set camera settings            
     Cam2                                                = bpy.data.cameras["Camera"]
     Cam2.stereo.interocular_distance                    = 0.0035                        # Set for average Rhesus macaque IPD (meters)
     Cam2.stereo.convergence_distance                    = ViewingDistance/100           # Cameras converge at screen distance from viewer
     Cam2.stereo.convergence_mode                        = 'OFFAXIS'                     # Off-axis frusta are required for physically correct renders
     
-    
-    #============ Set camera settings
     Cam                                                 = bpy.data.objects["Camera"]
     Cam.location                                        = mathutils.Vector((0, -ViewingDistance/100,0))
     Scene.camera.data.angle                             = FOV
