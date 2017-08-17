@@ -6,16 +6,16 @@ This repository contains Python code for automated control of a Blender (www.ble
 <img src= "https://user-images.githubusercontent.com/7523776/29434998-237ade62-8373-11e7-81b7-451fde4ba5b8.png" width="850" height="500" />
 
 The following parmaters of the model can be varied continuously:
-* Body position and orientation (3D world coordinates)
+* Body position and orientation (Cartesian coordinates relative to world origin)
 * Head orientation (spherical coordinates relative to body)
-* Gaze direction (spherical coordinates relative to head direction)
-* Eye vergence angle
+* Gaze direction (spherical coordinates relative to head)
+* Eye vergence angle (determined automatically for gaze target distance)
 * Eye lid closure (i.e. blink)
-* 4 stereotypical facial expression trajectories (starting from neutral):
+* Blend shapes for 4 stereotypical facial expression trajectories:
   * bared teeth display (submissive 'fear grimace')
   * open-mouthed threat (agressive)
   * pursed-lips (coo vocalization)
-  * yawn
+  * yawn 
 * Additional independent control of brow, ears, and jaw movement.
 * Fur length, density, color, texture map
 * Skin color, material reflectance (including sub-surbace scattering), and texture
