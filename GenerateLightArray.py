@@ -26,12 +26,15 @@ def appendSpherical_np(xyz):
 
 def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
     
-    #=============== Set lamp array parameters
+    # LampType = 'POINT'; 'SUN'; 'SPOT'; 'HEMI'; 
+    # LampArrangement = 'circle'; 'hemi'; 'sphere'
+    # 
     
-    LampArrangement     = 'hemi'              # Options = 'circle'; 'hemi'; 'sphere'
+    #=============== Set lamp array parameters
+    FlipArray           = 1                     # 0 = pole is Y-axis; 1 = pole is Z-axis          
     LampNoAzAngles      = 8                     # Default number of azimuth angles
     LampNoElAngles      = 3                     # Default number of elevation angles
-    LampArrayRadius     = 1                     # Radius of array of lamps
+    LampArrayRadius     = 1.5                   # Radius of array of lamps
     LampCircleHeight    = 1                     # Lamp height (meters) for circular lamp arrangement
 
     #=============== Generate spherical coordinates for each lamp
@@ -66,6 +69,12 @@ def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
             LampRot[li][0] = -el
             LampRot[li][1] = 0
             LampRot[li][2] = -az
+            if FlipArray == 1:
+                LampLocs[li] = [LampLocs[li][i] for i in [0,2,1]]
+                LampRot[li]  = [LampRot[li][i] for i in [0,2,1]]
+                LampLocs[li][1] = -LampLocs[li][1]
+                LampRot[li][1] = -LampRot[li][1]
+                LampRot[li][0] = -LampRot[li][0]
             
             #============== Add lamp
             lamp_data       = bpy.data.lamps.new(name='Lamp_%d' % (li), type=LampType)  # Create new lamp data block
@@ -79,4 +88,5 @@ def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
             LampObjects[li] = lamp_object            
             li = li+1;
     return LampObjects
+  
   
