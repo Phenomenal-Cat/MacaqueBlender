@@ -52,10 +52,10 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         Resolution         = [1920, 1920]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 6:                        #============ For NIF vertical bore 4.7T using Epson projectors
-        ViewingDistance    = 52.0                                       # Set viewing distance (centimeters)
+        ViewingDistance    = 100.0       #52                                # Set viewing distance (centimeters)
         MonitorSize        = [25.2, 16.0]                               # Set physical screen dimensions (centimeters)
         MonitorSize        = [25.2*2, 16.0*2]       # <<< Screen is smaller than real life monkey head! To create smaller render, we increase physical screen size
-        Resolution         = [1920, 1080]                               # Set render resolution per eye (pixels) 
+        Resolution         = [1000, 1000]                               # Set render resolution per eye (pixels) 
         
     else:
     	print("Unknown setup!")

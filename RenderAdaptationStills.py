@@ -15,8 +15,9 @@ import mathutils as mu
 import math
 import numpy as np
 import socket
+import os.path
 #from scipy import io
-from InitBlendScene import InitBlendScene
+#from InitBlendScene import InitBlendScene
 from GenerateLightArray import GenerateLightArray
 
 def HeadLookAt(El, Az):
@@ -64,22 +65,21 @@ def CenterCyclopean(EyeLocations):              #================ Caclulate in-p
 if socket.gethostname().find("STIM_S4")==0:
     BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur3.blend"
-elif socket.gethostname().find("MH01918639MACDT")==0 :
+elif socket.gethostname().find("MH01918639MACDT")==0:
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur.blend"
 elif socket.gethostname().find("DESKTOP-5PBDLG6")==0 :
     BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/"
-elif socket.gethostname().find("Aidans-Mac")==0:
-    #BlenderDir      = "/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/"
-    BlenderDir      = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/BlenderFiles/"
-    BlenderFile     = "BlenderFiles/NGmacaqueHead09.blen.blend"
+elif socket.gethostname().find("Aidans-Mac")==0  or socket.gethostname().find("MH02086178MACLT")==0:
+    BlenderDir      = "/Volumes/Seagate Backup 1/Stimuli/Faces/MacaqueBlenderRenders/"
+    BlenderFile     = "BlenderFiles/NGmacaqueHead09_adapt.blend"
 
 
-ExperimentName      = "AdaptationExp"           
-SetupGeometry       = 6                         # Specify which physical setup stimuli will be presented in
-StereoFormat        = 0                         # Side-by-side stereo renders?
-#InitBlendScene(SetupGeometry, StereoFormat)
-RenderDir           = BlenderDir + ExperimentName
+ExperimentName      = "AdaptationExp"               # Name of experiment/ project
+SetupGeometry       = 6                             # Specify which physical setup stimuli will be presented in
+StereoFormat        = 0                             # Side-by-side stereo renders?
+#InitBlendScene(SetupGeometry, StereoFormat)         # Initialize scene geometry
+RenderDir           = BlenderDir + ExperimentName   # Create directory name to save renders to
 
 
 #============ Set rendering parameters				
@@ -91,12 +91,12 @@ Distances       = [0]                                                       # Se
 Scales          = [1]                                                       # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                     # Set relative length of fur (0-1)
 ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]                  # Set facial expressions
-ExpNo           = [0]#[0, 1, 2, 3, 4]                                           
+ExpNo           = [0, 1, 2, 3, 4]                                           
 ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]])
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
 mexp            = 0
 
-Lamps = GenerateLightArray('SPOT','hemi')                                   # Generate a hemisphere of spotlight lamp objects in scene
+Lamps = GenerateLightArray('SPOT','circle')                                   # Generate a hemisphere of spotlight lamp objects in scene
 
 CondParams = {'GazeAzAngles':GazeAzAngles, 'GazeElAngles': GazeElAngles, 'HeadAzAngles':HeadAzAngles, 'HeadElAngles':HeadElAngles, 'Distances':Distances, 'Scales':Scales, 'FurLengths':FurLengths, 'Expressions':ExpStr, 'ExpWeights':ExpWeights, 'ExpMicroWeights':ExpMicroWeights}
 
@@ -205,10 +205,13 @@ for exp in ExpNo:
 
                             #=========== Render image and save to file
                             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                            RenderFilename = "MacaqueAdapt_%s_Haz%d_Hel%d_Lamp%d_dist%d.png" % (ExpStr[exp], Haz, Hel, lon, d)
-                            print("Now rendering: " + RenderFilename + " . . .\n")
-                            bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
-                            bpy.ops.render.render(write_still=True, use_viewport=True)
+                            RenderFilename = "MacaqueAdapt_%s_Haz%d_Hel%d_Lamp%d.png" % (ExpStr[exp], Haz, Hel, lon)
+                            if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
+                                print("Now rendering: " + RenderFilename + " . . .\n")
+                                bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
+                                bpy.ops.render.render(write_still=True, use_viewport=True)
+                            elif os.path.isfile(RenderDir + "/" + RenderFilename) == 1:
+                                print("File " + RenderFilename + " already exists. Skipping . . .\n")
                             
                             #=========== Update conditions data
                             CondMatrix[r]                   = [exp, Haz, Hel, Gaz, Gel, lon, d];
