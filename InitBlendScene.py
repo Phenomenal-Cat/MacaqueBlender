@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=3, StereoFormat=1):
+def InitBlendScene(SetupGeometry=2, StereoFormat=1):
  
     #============ Set viewing geometry
     global MonitorSize
@@ -54,11 +54,12 @@ def InitBlendScene(SetupGeometry=3, StereoFormat=1):
     elif SetupGeometry == 6:                        #============ For NIF vertical bore 4.7T using Epson projectors
         ViewingDistance    = 52.0                                       # Set viewing distance (centimeters)
         MonitorSize        = [25.2, 16.0]                               # Set physical screen dimensions (centimeters)
-        Resolution         = [1080, 1920]                               # Set render resolution per eye (pixels) 
+        MonitorSize        = [25.2*2, 16.0*2]       # <<< Screen is smaller than real life monkey head! To create smaller render, we increase physical screen size
+        Resolution         = [1920, 1080]                               # Set render resolution per eye (pixels) 
         
     else:
     	print("Unknown setup!")
-        break
+        #break
     
     FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)       # Set camera horizontal field of view (radians)
     
@@ -89,7 +90,8 @@ def InitBlendScene(SetupGeometry=3, StereoFormat=1):
     Scene.render.use_stamp              = False							            # Turn render stamps off
     Scene.render.display_mode           = 'SCREEN'
     Scene.cycles.film_transparent       = True
-    Scene.render.image_settings.color_mode = 'RGBA'
+    Scene.render.image_settings.file_format = 'PNG'
+    Scene.render.image_settings.color_mode  = 'RGBA'
     
     #============ Set stereoscopic 3D settings
     StereoSet                                           = bpy.context.scene.render.image_settings
@@ -105,7 +107,7 @@ def InitBlendScene(SetupGeometry=3, StereoFormat=1):
         StereoSet.stereo_3d_format.display_mode                 = 'SIDEBYSIDE'
         StereoSet.stereo_3d_format.use_sidebyside_crosseyed     = False             # Do not switch eyes
         if SqueezeFrame == 1:
-            StereoSet.stereo_3d_format.use_squeezed_frame       = True                  # 
+            StereoSet.stereo_3d_format.use_squeezed_frame       = True              # Horizontally squeeze frames for LG TV 
         elif SqueezeFrame == 0:
             StereoSet.stereo_3d_format.use_squeezed_frame       = False
             

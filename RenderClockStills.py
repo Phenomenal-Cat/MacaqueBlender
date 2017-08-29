@@ -15,7 +15,7 @@ import mathutils as mu
 import math
 import numpy as np
 import socket
-#from InitBlendScene import InitBlend
+from InitBlendScene import InitBlendScene
 
 def HeadLookAt(El, Az):
     Rad = 1
@@ -62,7 +62,7 @@ elif socket.gethostname().find("Aidans-Mac")==0:
 
 SetupGeometry       = 2                         # Specify which physical setup stimuli will be presented in
 StereoFormat        = 1
-#InitBlend(SetupGeometry, StereoFormat )
+InitBlendScene(SetupGeometry, StereoFormat )
 RenderDir           = BlenderDir # + "Renders"
 
 
