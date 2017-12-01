@@ -80,12 +80,12 @@ ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
 mexp            = 0
 
-ShowBody            = 1;                                
-IncludeEyesOnly     = 1;                                # Include eyes only condition? 
+ShowBody            = 0;                                
+IncludeEyesOnly     = 0;                                # Include eyes only condition? 
 InfiniteVergence    = 0;                                # Fixate (vergence) at infinity?
-RotateBody          = 0;                                # 0 = rotate head relative to body; 1 = rotate whole body
+RotateBody          = 2;                                # 0 = rotate head relative to body; 1 = rotate whole body; 2 = rotate head (not using rig)
 GazeAtCamera        = 1;                                # Update gaze direction to maintain eye contact?
-MoveGazeOnly        = 1;
+MoveGazeOnly        = 0;
 NoConditions        = len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances) #*len(Scales)        # Calculate total number of conditions
 if IncludeEyesOnly == 1:
     NoConditions = NoConditions*2;                      
@@ -145,6 +145,9 @@ for exp in ExpNo:
                                 #bpy.ops.object.mode_set(mode='POSE')
                                 HeadXYZ = HeadLookAt(Hel, Haz)
                                 head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+                                
+                        elif RotateBody ==2:
+                            head.rotation_euler = (math.radians(Hel+10), 0, math.radians(Haz))
 
 
                         #=========== Rotate gaze
