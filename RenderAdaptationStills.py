@@ -62,8 +62,8 @@ def CenterCyclopean(EyeLocations):              #================ Caclulate in-p
 
 
 
-if socket.gethostname().find("STIM_S4")==0:
-    BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/"
+if socket.gethostname().find("DESKTOP-5PBDLG6")==0:
+    BlenderDir      = "P:/murphya/"
     BlenderFile     = "Geocorrect_fur3.blend"
 elif socket.gethostname().find("MH01918639MACDT")==0:
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"

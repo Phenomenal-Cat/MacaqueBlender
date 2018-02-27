@@ -49,10 +49,10 @@ def GetEyeLocations():                        #=============== Get current eye l
 if socket.gethostname().find("STIM_S4")==0:
     BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur3.blend"
-elif socket.gethostname().find("MH01918639MACDT")==0 :
+elif socket.gethostname().find("MH01918639MACDT")==0:
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur.blend"
-elif socket.gethostname().find("DESKTOP-5PBDLG6")==0 :
+elif socket.gethostname().find("DESKTOP-5PBDLG6")==0:
     BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/"
 elif socket.gethostname().find("Aidans-Mac")==0:
     #BlenderDir      = "/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/"
@@ -62,7 +62,8 @@ elif socket.gethostname().find("Aidans-Mac")==0:
 SetupGeometry       = 2                         # Specify which physical setup stimuli will be presented in
 StereoFormat        = 1
 #InitBlend(SetupGeometry, StereoFormat )
-RenderDir           = BlenderDir + "Renders"
+RenderDir           = BlenderDir + "BodyHeadRenders"
+print("Rendering to " + BlenderDir)
 
 
 #============ Set rendering parameters						
@@ -70,6 +71,8 @@ GazeElAngles    = [0]  # [-20,-10, 0, 10,20]                                    
 GazeAzAngles    = [0] #[-25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25]                # Set azimuth angles (degrees)
 HeadElAngles    = [0]
 HeadAzAngles    = [-90,-60,-30,0,30,60,90]
+BodyElAngles    = [0]
+BodyAzAngles    = HeadAzAngles 
 #Distances       = [-20, 0, 20] 						                          # Set object distance from origin (centimeters)
 Distances       = [0]
 Scales          = [1]                                                             # Physical scale of object (proportion)
@@ -86,7 +89,7 @@ InfiniteVergence    = 0;                                # Fixate (vergence) at i
 RotateBody          = 1;                                # 0 = rotate head relative to body; 1 = rotate whole body
 GazeAtCamera        = 0;                                # Update gaze direction to maintain eye contact?
 MoveGazeOnly        = 0;
-NoConditions        = len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances) #*len(Scales)        # Calculate total number of conditions
+NoConditions        = len(BodyElAngles)*len(BodyAzAngles)*len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances) #*len(Scales)        # Calculate total number of conditions
 if IncludeEyesOnly == 1:
     NoConditions = NoConditions*2;                      
     
@@ -130,44 +133,45 @@ for exp in ExpNo:
     for d in Distances:
         body.location = mu.Vector((OrigBodyLoc[0], d/100, OrigBodyLoc[2]))
 
-        for Hel in HeadElAngles:
-            for Haz in HeadAzAngles:
-                
-                for Gel in GazeElAngles:
-                    for Gaz in GazeAzAngles:
-
-                        #=========== Rotate head/ body
-                        if RotateBody == 1:
-                            body.rotation_euler = (math.radians(Hel), 0, math.radians(Haz))
-                            
-                        elif RotateBody ==0:
-                            if MoveGazeOnly == 0:
-                                #bpy.ops.object.mode_set(mode='POSE')
-                                HeadXYZ = HeadLookAt(Hel, Haz)
-                                head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
-
-
-                        #=========== Rotate gaze
-                        EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
-                        if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
-                            if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
-                                CamLocation = bpy.data.scenes["Scene"].camera.location
-                                head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
-                                
-                            elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
-                                
-                                head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
-                            
-                        if MoveGazeOnly == 1:
-                            GazeXYZ = GazeLookAt(Gel, Gaz)
-                            head.pose.bones['EyesTracker'].location = GazeXYZ
-
+        for Bel in BodyElAngles:
+            for Baz in BodyAzAngles: 
+                for Hel in HeadElAngles:
+                    for Haz in HeadAzAngles:
                         
-                        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                        Filename = "MacaqueGaze_%s_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d.png" % (ExpStr[exp], Haz, Hel, Gaz, Gel, d)
-                        print("Now rendering: " + Filename + " . . .\n")
-                        #bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-                        #bpy.ops.render.render(write_still=True, use_viewport=True)
+                        for Gel in GazeElAngles:
+                            for Gaz in GazeAzAngles:
+
+                                #=========== Rotate body relative to world
+                                body.rotation_euler = (math.radians(Bel), 0, math.radians(Baz))
+                                    
+                                #=========== Rotate head relative to body
+                                if MoveGazeOnly == 0:
+                                    #bpy.ops.object.mode_set(mode='POSE')
+                                    HeadXYZ = HeadLookAt(Hel, Haz)
+                                    head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+
+
+                                #=========== Rotate gaze relative to head
+                                EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
+                                if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
+                                    if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
+                                        CamLocation = bpy.data.scenes["Scene"].camera.location
+                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
+                                        
+                                    elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
+                                        
+                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
+                                    
+                                if MoveGazeOnly == 1:
+                                    GazeXYZ = GazeLookAt(Gel, Gaz)
+                                    head.pose.bones['EyesTracker'].location = GazeXYZ
+
+                                
+                                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                                Filename = "Macaque_%s_Baz%d_Bel%d_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d.png" % (ExpStr[exp], Baz, Bel, Haz, Hel, Gaz, Gel, d)
+                                print("Now rendering: " + Filename + " . . .\n")
+                                bpy.context.scene.render.filepath = RenderDir + "\" + Filename
+                                bpy.ops.render.render(write_still=True, use_viewport=True)
 
 print("Rendering completed!\n")
 
