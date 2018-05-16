@@ -90,14 +90,14 @@ FurLengths      = [0.7]                                                     # Se
 ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]                  # Set facial expressions
 #ExpNo           = [0, 1, 2, 3, 4]       
 ExpNo           = [1, 2, 3, 4]       
-ExpProp         = 0.1                                      
-ExpWeights      = np.matrix([[0,0,0,0], [ExpProp,0,0,0], [0,ExpProp,0,0], [0,0,ExpProp,0], [0,0,0,ExpProp]])
+ExpProps         = [0.1,0.1,0.3,0.4,0.5]                                      
+#ExpWeights      = np.matrix([[0,0,0,0], [ExpProp,0,0,0], [0,ExpProp,0,0], [0,0,ExpProp,0], [0,0,0,ExpProp]])
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
 mexp            = 0
 
 Lamps = GenerateLightArray('SPOT','circle')                                   # Generate a hemisphere of spotlight lamp objects in scene
 
-CondParams = {'GazeAzAngles':GazeAzAngles, 'GazeElAngles': GazeElAngles, 'HeadAzAngles':HeadAzAngles, 'HeadElAngles':HeadElAngles, 'Distances':Distances, 'Scales':Scales, 'FurLengths':FurLengths, 'Expressions':ExpStr, 'ExpWeights':ExpWeights, 'ExpMicroWeights':ExpMicroWeights}
+CondParams = {'GazeAzAngles':GazeAzAngles, 'GazeElAngles': GazeElAngles, 'HeadAzAngles':HeadAzAngles, 'HeadElAngles':HeadElAngles, 'Distances':Distances, 'Scales':Scales, 'FurLengths':FurLengths, 'Expressions':ExpStr, 'ExpMicroWeights':ExpMicroWeights}
 
 KeepCyclopeanCenter = 0;                                # Move body in order to maintain cyclopean eye in camera's optical axis
 ShowBody            = 1;                                # Render body?
@@ -106,7 +106,7 @@ InfiniteVergence    = 0;                                # Fixate (vergence) at i
 RotateBody          = 0;                                # 0 = rotate head relative to body; 1 = rotate whole body
 GazeAtCamera        = 0;                                # Update gaze direction to maintain eye contact?
 MoveGazeOnly        = 0;
-NoConditions        = len(ExpNo)*len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances)*len(Lamps) #*len(Scales)        # Calculate total number of conditions
+NoConditions        = len(ExpProps)*len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances)*len(Lamps) #*len(Scales)        # Calculate total number of conditions
 if IncludeEyesOnly == 1:
     NoConditions = NoConditions*2;                      
     
@@ -134,106 +134,108 @@ Matfile         = RenderDir + "/%s_Conditions.mat" % (ExperimentName)           
 
 #========================== Begin rendering loop
 r = 0
-for exp in ExpNo:
+for ExpProp in ExpProps:
+    ExpWeights      = np.matrix([[0,0,0,0], [ExpProp,0,0,0], [0,ExpProp,0,0], [0,0,ExpProp,0], [0,0,0,ExpProp]])
+    for exp in ExpNo:
 
-    #======= Set primary expression
-    #bpy.ops.object.mode_set(mode='POSE')
-    head.pose.bones['yawn'].location    = mu.Vector((0,0,0.02*ExpWeights[exp,3]))           # Wide mouthed 'yawn' expression
-    head.pose.bones['Kiss'].location    = mu.Vector((0,0.02*ExpWeights[exp,2],0))           # Pursed lip 'coo' expression
-    head.pose.bones['jaw'].location     = mu.Vector((0,0,0.02*ExpWeights[exp,1]))           # Open-mouthed 'threat' expression
-    head.pose.bones['Fear'].location    = mu.Vector((0,-0.02*ExpWeights[exp,0],0))          # Bared-teeth 'fear' grimace
+        #======= Set primary expression
+        #bpy.ops.object.mode_set(mode='POSE')
+        head.pose.bones['yawn'].location    = mu.Vector((0,0,0.02*ExpWeights[exp,3]))           # Wide mouthed 'yawn' expression
+        head.pose.bones['Kiss'].location    = mu.Vector((0,0.02*ExpWeights[exp,2],0))           # Pursed lip 'coo' expression
+        head.pose.bones['jaw'].location     = mu.Vector((0,0,0.02*ExpWeights[exp,1]))           # Open-mouthed 'threat' expression
+        head.pose.bones['Fear'].location    = mu.Vector((0,-0.02*ExpWeights[exp,0],0))          # Bared-teeth 'fear' grimace
 
-    #======= Set micro expression
-    head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))   # Close eye lids (blink)
-    head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))    # Retract ears
-    head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))   # Raise brow
-    head.pose.bones['EyesTracker'].scale = mu.Vector((0, 1*ExpMicroWeights[mexp, 3], 0))    # Pupil dilation/ constriction
+        #======= Set micro expression
+        head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))   # Close eye lids (blink)
+        head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))    # Retract ears
+        head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))   # Raise brow
+        head.pose.bones['EyesTracker'].scale = mu.Vector((0, 1*ExpMicroWeights[mexp, 3], 0))    # Pupil dilation/ constriction
 
-    #for s in Scales:
-    #head.scale = mu.Vector((s, s, s))
-    s = 1
-    
-    for d in Distances:
-        body.location = mu.Vector((OrigBodyLoc[0], d/100, OrigBodyLoc[2]))                  # Move entire avatar d cm in depth from starting position
+        #for s in Scales:
+        #head.scale = mu.Vector((s, s, s))
+        s = 1
+        
+        for d in Distances:
+            body.location = mu.Vector((OrigBodyLoc[0], d/100, OrigBodyLoc[2]))                  # Move entire avatar d cm in depth from starting position
 
-        for Hel in HeadElAngles:
-            for Haz in HeadAzAngles:
-                
-                lon = 1;
-                #for lon in Lamps:
-                for loff in Lamps:
-                    Lamps[loff].hide_render = True
-                Lamps[lon].hide_render = False
-
-
-                for Gel in GazeElAngles:
-                    for Gaz in GazeAzAngles:
-
-                        #=========== Rotate head/ body
-                        if RotateBody == 1:
-                            body.rotation_euler = (math.radians(Hel), 0, math.radians(Haz))
-                            
-                        elif RotateBody ==0:
-                            if MoveGazeOnly == 0:
-                                #bpy.ops.object.mode_set(mode='POSE')
-                                HeadXYZ = HeadLookAt(Hel, Haz)
-                                head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+            for Hel in HeadElAngles:
+                for Haz in HeadAzAngles:
+                    
+                    lon = 1;
+                    #for lon in Lamps:
+                    for loff in Lamps:
+                        Lamps[loff].hide_render = True
+                    Lamps[lon].hide_render = False
 
 
-                        #=========== Rotate gaze
-                        if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
-                            if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
-                                CamLocation = bpy.data.scenes["Scene"].camera.location
-                                head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
+                    for Gel in GazeElAngles:
+                        for Gaz in GazeAzAngles:
+
+                            #=========== Rotate head/ body
+                            if RotateBody == 1:
+                                body.rotation_euler = (math.radians(Hel), 0, math.radians(Haz))
                                 
-                            elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
-                                head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
-
-                        if MoveGazeOnly == 1:
-                            GazeXYZ = GazeLookAt(Gel, Gaz)
-                            head.pose.bones['EyesTracker'].location = GazeXYZ
-
-                        #=========== Get eye positions
-                        EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
-                        CycEyeLocations = CenterCyclopean(EyeLocations)                             # Get offset of cyclopean eye from world origin
-                        print(CycEyeLocations)                                                         # Print eye coordinates for current scene (for debugging)
-
-                        if KeepCyclopeanCenter == 1:
-                            #body.location = mu.Vector((OrigBodyLoc[0]-CycEyeLocations[0], d/100, OrigBodyLoc[2]-CycEyeLocations[2]))
-                            body.location = mu.Vector((OrigBodyLoc[0]-CycEyeLocations[0], OrigBodyLoc[1]-CycEyeLocations[1], OrigBodyLoc[2]-CycEyeLocations[2]))  
+                            elif RotateBody ==0:
+                                if MoveGazeOnly == 0:
+                                    #bpy.ops.object.mode_set(mode='POSE')
+                                    HeadXYZ = HeadLookAt(Hel, Haz)
+                                    head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
 
 
-                        #=========== Render image and save to file
-                        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                        #RenderFilename = "MacaqueAdapt_%s_Haz%d_Hel%d_Lamp%d.png" % (ExpStr[exp], Haz, Hel, lon)
-                        RenderFilename = "MacaqueAdapt_%s_%d.png" % (ExpStr[exp], ExpProp*100)
-                        if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
-                            print("Now rendering: " + RenderFilename + " . . .\n")
-                            bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
-                            bpy.ops.render.render(write_still=True, use_viewport=True)
-                        elif os.path.isfile(RenderDir + "/" + RenderFilename) == 1:
-                            print("File " + RenderFilename + " already exists. Skipping . . .\n")
-                        
-                        #=========== Update conditions data
-                        CondMatrix[r]                   = [exp, Haz, Hel, Gaz, Gel, lon, d];
-                        CondStruct[r]['Filename']       = RenderFilename
-                        CondStruct[r]['FullFile']       = RenderDir + "/" + RenderFilename
-                        CondStruct[r]['Expression']     = ExpStr[exp]
-                        CondStruct[r]['HeadAzimuth']    = Haz
-                        CondStruct[r]['HeadElevation']  = Hel
-                        #CondStruct[r]['HeadVectorCoord']= head.pose.bones['HeadTracker'].location
-                        #CondStruct[r]['GazeAzimuth']    = Gaz
-                        #CondStruct[r]['GazeElevation']  = Gel
-                        #CondStruct[r]['GazeVectorCoord']= head.pose.bones['EyesTracker'].location
-                        ##CondStruct[r]['LampAzimuth']    = Laz
-                        ##CondStruct[r]['LampElevation']  = Lel
-                        #CondStruct[r]['LampVectorCoord']= Lamps[lon].location
-                        #CondStruct[r]['Distance']       = d
-                        #CondStruct[r]['BodyRotation']   = RotateBody
-                        #CondStruct[r]['EyeLocations']   = EyeLocations
-                        
-                        r = r+1
-                   
+                            #=========== Rotate gaze
+                            if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
+                                if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
+                                    CamLocation = bpy.data.scenes["Scene"].camera.location
+                                    head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
+                                    
+                                elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
+                                    head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
+
+                            if MoveGazeOnly == 1:
+                                GazeXYZ = GazeLookAt(Gel, Gaz)
+                                head.pose.bones['EyesTracker'].location = GazeXYZ
+
+                            #=========== Get eye positions
+                            EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
+                            CycEyeLocations = CenterCyclopean(EyeLocations)                             # Get offset of cyclopean eye from world origin
+                            print(CycEyeLocations)                                                         # Print eye coordinates for current scene (for debugging)
+
+                            if KeepCyclopeanCenter == 1:
+                                #body.location = mu.Vector((OrigBodyLoc[0]-CycEyeLocations[0], d/100, OrigBodyLoc[2]-CycEyeLocations[2]))
+                                body.location = mu.Vector((OrigBodyLoc[0]-CycEyeLocations[0], OrigBodyLoc[1]-CycEyeLocations[1], OrigBodyLoc[2]-CycEyeLocations[2]))  
+
+
+                            #=========== Render image and save to file
+                            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                            #RenderFilename = "MacaqueAdapt_%s_Haz%d_Hel%d_Lamp%d.png" % (ExpStr[exp], Haz, Hel, lon)
+                            RenderFilename = "MacaqueAdapt_%s_%d.png" % (ExpStr[exp], ExpProp*100)
+                            if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
+                                print("Now rendering: " + RenderFilename + " . . .\n")
+                                bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
+                                bpy.ops.render.render(write_still=True, use_viewport=True)
+                            elif os.path.isfile(RenderDir + "/" + RenderFilename) == 1:
+                                print("File " + RenderFilename + " already exists. Skipping . . .\n")
+                            
+                            #=========== Update conditions data
+                            CondMatrix[r]                   = [exp, Haz, Hel, Gaz, Gel, lon, d];
+                            CondStruct[r]['Filename']       = RenderFilename
+                            CondStruct[r]['FullFile']       = RenderDir + "/" + RenderFilename
+                            CondStruct[r]['Expression']     = ExpStr[exp]
+                            CondStruct[r]['HeadAzimuth']    = Haz
+                            CondStruct[r]['HeadElevation']  = Hel
+                            #CondStruct[r]['HeadVectorCoord']= head.pose.bones['HeadTracker'].location
+                            #CondStruct[r]['GazeAzimuth']    = Gaz
+                            #CondStruct[r]['GazeElevation']  = Gel
+                            #CondStruct[r]['GazeVectorCoord']= head.pose.bones['EyesTracker'].location
+                            ##CondStruct[r]['LampAzimuth']    = Laz
+                            ##CondStruct[r]['LampElevation']  = Lel
+                            #CondStruct[r]['LampVectorCoord']= Lamps[lon].location
+                            #CondStruct[r]['Distance']       = d
+                            #CondStruct[r]['BodyRotation']   = RotateBody
+                            #CondStruct[r]['EyeLocations']   = EyeLocations
+                            
+                            r = r+1
+                       
                         
                         
 print("Rendering completed!\n")

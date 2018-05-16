@@ -26,7 +26,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 2:                        #============ For SCNI setup 3 with LG 55EF9500 OLED 4K TV
-        ViewingDistance    = 90.0                                      # Set viewing distance (centimeters)
+        ViewingDistance    = 100.0                                     # Set viewing distance (centimeters)
         BezelSize          = 0.8*2;                                    # Total monitor bezel (centimeters)
         MonitorSizeA       = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
         MonitorSize        = numpy.subtract(MonitorSizeA, [BezelSize, BezelSize])       # Adjust for bezel
