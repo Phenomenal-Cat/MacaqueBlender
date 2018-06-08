@@ -79,7 +79,7 @@ def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
             #============== Add lamp
             lamp_data       = bpy.data.lamps.new(name='Lamp_%d' % (li), type=LampType)  # Create new lamp data block
             lamp_object     = bpy.data.objects.new(name='Lamp_%d' % (li), object_data=lamp_data)    # Create new lamp
-            bpy.data.scenes[0].objects.link(lamp_object)                                      # Link new lamp to scene
+            bpy.data.scenes[0].objects.link(lamp_object)                                            # Link new lamp to scene
             
             lamp_object.location        = mu.Vector((LampLocs[li]))                                 # Position lamp
             lamp_object.rotation_euler  = mu.Vector((LampRot[li]))                                  # Rotate lamp

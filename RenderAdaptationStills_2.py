@@ -65,7 +65,7 @@ if socket.gethostname().find("MH01918639MACDT")==0:
     BlenderDir      = "/Volumes/projects/murphya/MacaqueFace3D/BlenderFiles/"
     BlenderFile     = "Geocorrect_fur.blend"
 elif socket.gethostname().find("DESKTOP-5PBDLG6")==0 :
-    BlenderDir      = "P:/murphya/MacaqueFace3D/BlenderFiles/AdaptationExp/StimulusSet_2/"
+    BlenderDir      = "P:/murphya/AdaptationExp/StimulusSet_2/"
 elif socket.gethostname().find("Aidans-Mac")==0  or socket.gethostname().find("MH02086178MACLT")==0:
     BlenderDir      = "/Volumes/Seagate Backup 1/Stimuli/Faces/MacaqueBlenderRenders/"
     BlenderFile     = "BlenderFiles/NGmacaqueHead09_adapt.blend"
@@ -82,15 +82,13 @@ RenderDir           = BlenderDir
 GazeElAngles    = [0]                                                       # Set elevation angles (degrees)
 GazeAzAngles    = [0]                                                       # Set azimuth angles (degrees)
 HeadElAngles    = [0]                                                       # Set elevation angles (degrees)
-#HeadAzAngles    = [-60, -30, 0, 30, 60]                                     # Set azimuth angles (degrees)
-HeadAzAngles    = [0]                                     # Set azimuth angles (degrees)
+HeadAzAngles    = [-60, -30, 0, 30, 60]                                     # Set azimuth angles (degrees)
 Distances       = [0]                                                       # Set object distance from origin (centimeters)
 Scales          = [1]                                                       # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                     # Set relative length of fur (0-1)
 ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]                  # Set facial expressions
-#ExpNo           = [0, 1, 2, 3, 4]       
-ExpNo           = [1, 2, 3, 4]       
-ExpProps         = [0.1,0.1,0.3,0.4,0.5]                                      
+ExpNo           = [0, 1, 2, 3, 4]       
+ExpProps         = [0, 0.3, 0.3, 0.5, 0.2]                                      
 #ExpWeights      = np.matrix([[0,0,0,0], [ExpProp,0,0,0], [0,ExpProp,0,0], [0,0,ExpProp,0], [0,0,0,ExpProp]])
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
 mexp            = 0
@@ -134,35 +132,38 @@ Matfile         = RenderDir + "/%s_Conditions.mat" % (ExperimentName)           
 
 #========================== Begin rendering loop
 r = 0
-for ExpProp in ExpProps:
-    ExpWeights      = np.matrix([[0,0,0,0], [ExpProp,0,0,0], [0,ExpProp,0,0], [0,0,ExpProp,0], [0,0,0,ExpProp]])
-    for exp in ExpNo:
+exp = 1
+    
+for expl in ExpNo:
+    ExpWeights      = np.matrix([[0,0,0,0], [ExpProps[exp],0,0,0], [0,ExpProps[exp],0,0], [0,0,ExpProps[exp],0], [0,0,0,ExpProps[exp]]])
 
-        #======= Set primary expression
-        #bpy.ops.object.mode_set(mode='POSE')
-        head.pose.bones['yawn'].location    = mu.Vector((0,0,0.02*ExpWeights[exp,3]))           # Wide mouthed 'yawn' expression
-        head.pose.bones['Kiss'].location    = mu.Vector((0,0.02*ExpWeights[exp,2],0))           # Pursed lip 'coo' expression
-        head.pose.bones['jaw'].location     = mu.Vector((0,0,0.02*ExpWeights[exp,1]))           # Open-mouthed 'threat' expression
-        head.pose.bones['Fear'].location    = mu.Vector((0,-0.02*ExpWeights[exp,0],0))          # Bared-teeth 'fear' grimace
+    #======= Set primary expression
+    #bpy.ops.object.mode_set(mode='POSE')
+    head.pose.bones['yawn'].location    = mu.Vector((0,0,0.02*ExpWeights[exp,3]))           # Wide mouthed 'yawn' expression
+    head.pose.bones['Kiss'].location    = mu.Vector((0,0.02*ExpWeights[exp,2],0))           # Pursed lip 'coo' expression
+    head.pose.bones['jaw'].location     = mu.Vector((0,0,0.02*ExpWeights[exp,1]))           # Open-mouthed 'threat' expression
+    head.pose.bones['Fear'].location    = mu.Vector((0,-0.02*ExpWeights[exp,0],0))          # Bared-teeth 'fear' grimace
 
-        #======= Set micro expression
-        head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))   # Close eye lids (blink)
-        head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))    # Retract ears
-        head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))   # Raise brow
-        head.pose.bones['EyesTracker'].scale = mu.Vector((0, 1*ExpMicroWeights[mexp, 3], 0))    # Pupil dilation/ constriction
+    #======= Set micro expression
+    head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))   # Close eye lids (blink)
+    head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))    # Retract ears
+    head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))   # Raise brow
+    head.pose.bones['EyesTracker'].scale = mu.Vector((0, 1*ExpMicroWeights[mexp, 3], 0))    # Pupil dilation/ constriction
 
-        #for s in Scales:
-        #head.scale = mu.Vector((s, s, s))
-        s = 1
-        
-        for d in Distances:
-            body.location = mu.Vector((OrigBodyLoc[0], d/100, OrigBodyLoc[2]))                  # Move entire avatar d cm in depth from starting position
+    exp += 1
 
-            for Hel in HeadElAngles:
-                for Haz in HeadAzAngles:
-                    
-                    lon = 1;
-                    #for lon in Lamps:
+    #for s in Scales:
+    #head.scale = mu.Vector((s, s, s))
+    s = 1
+    
+    for d in Distances:
+        body.location = mu.Vector((OrigBodyLoc[0], d/100, OrigBodyLoc[2]))                  # Move entire avatar d cm in depth from starting position
+
+        for Hel in HeadElAngles:
+            for Haz in HeadAzAngles:
+                
+                lon = 1;
+                for lon in Lamps:
                     for loff in Lamps:
                         Lamps[loff].hide_render = True
                     Lamps[lon].hide_render = False
@@ -207,8 +208,7 @@ for ExpProp in ExpProps:
 
                             #=========== Render image and save to file
                             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                            #RenderFilename = "MacaqueAdapt_%s_Haz%d_Hel%d_Lamp%d.png" % (ExpStr[exp], Haz, Hel, lon)
-                            RenderFilename = "MacaqueAdapt_%s_%d.png" % (ExpStr[exp], ExpProp*100)
+                            RenderFilename = "MacaqueAdapt_%s_%d_Haz%d_Hel%d_Lamp%d.png" % (ExpStr[exp-1], ExpProps[exp-1]*100, Haz, Hel, lon)
                             if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
                                 print("Now rendering: " + RenderFilename + " . . .\n")
                                 bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
@@ -235,8 +235,8 @@ for ExpProp in ExpProps:
                             #CondStruct[r]['EyeLocations']   = EyeLocations
                             
                             r = r+1
-                       
-                        
+                            
+                    
                         
 print("Rendering completed!\n")
 io.savemat(Matfile, {'CondMatrix':CondMatrix, 'CondStruct':CondStruct, 'CondParams' :CondParams })       # Save conditions data to a Matlab .mat file

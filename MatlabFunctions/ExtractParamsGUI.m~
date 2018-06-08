@@ -187,12 +187,12 @@ function LoadParams
     [file, path]    = uigetfile('*.csv', 'Select parameters file', DefaultPath);
    
     Temp = csvread(fullfile(path, file), 1, 0); 
-    if size(Temp, 1) ~= numel(video.frames)
+    if size(Temp.Params(1).Timecourse, 2) ~= numel(video.frames)
         msgbox('Warning: number of frames in parameters file does not match number of frames in current movie clip!');
     else
-        for n = 1:size(Temp, 1)
-            Params(n).Timecourse = Temp(:,1+n);
-            Params(n).LinePoints = Temp(:,1+n);
+        for n = 1:numel(Temp.Params)
+            Params(n).Timecourse = Temp.Params(n).Timecourse;
+            Params(n).LinePoints = Temp.Params(n).LinePoints;
             set(Fig.ParamsH(n+3), 'ydata', Params(n).Timecourse);
             setPosition(Fig.LineH(n), [Params(n).LinePoints(1:2,Mov.CurrentFrame), Params(n).LinePoints(3:4,Mov.CurrentFrame)]);
         end
@@ -360,7 +360,7 @@ function SaveMovie(hObj, Evnt, Indx)
     for F = 1:numel(video.frames)
         set(Fig.imh, 'cdata', video.frames(F).cdata);
         set(Fig.th, 'string', sprintf('Frame %d', F));
-        set(Fig.plh, 'xdata', repmat(F,[1,2]));
+        set(Fig.plh, 'xdata', repmat((F-1)/video.rate,[1,2]));
         for n = 1:numel(Params)
             setPosition(Fig.LineH(n), [Params(n).LinePoints(1:2,F), Params(n).LinePoints(3:4,F)]);
         end
