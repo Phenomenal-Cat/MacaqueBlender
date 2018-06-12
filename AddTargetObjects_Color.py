@@ -9,7 +9,7 @@ import math
 import numpy as np
 import mathutils as mu
 
-def AddTargetObjects():
+def AddTargetObjects(TargetObjFile = []):
     
     #================= Set target appearance
     SphereRad       = 0.01                                              # Set sphere radius (meters)
@@ -18,15 +18,16 @@ def AddTargetObjects():
     SphereNumber    = 8
     SpherePolAng    = np.linspace(0,2*math.pi, SphereNumber+1)
     SphereLocs      = np.zeros((SphereNumber,3))
-    SphereMultiCol  = 1
+    SphereMultiCol  = 0
     
     if SphereMultiCol == 0:
-        SphereColor    = (0,0,1)                # Set target colors (RGB)
+        SphereColor    = (0,0,1)                    # Set target colors (RGB)
+        
     elif SphereMultiCol == 1:
-        np.random.seed(0)                       # Seed numpy's random number generator
+        np.random.seed(0)                                               # Seed numpy's random number generator
         SphereColor     = ((1,0,0),(1,0.5,0),(1,1,0),(0.5,1,0),(0,1,0),(0,1,0.5),(0,1,1),(0,0.5,1),(0,0,1),(1,0,1),(1,1,1))
-        ColorOrder      = np.random.permutation # Randomize color locations
-        SphereColor     = SphereColor[ColorOrder]
+        ColorOrder      = np.random.permutation(len(SphereColor))       # Randomize color locations
+        SphereColor     = SphereColor[ColorOrder]                       
     
     for sph in range(0,SphereNumber):
         SphereLocs[sph][0] = SphereEcc*math.sin(SpherePolAng[sph])
@@ -40,10 +41,10 @@ def AddTargetObjects():
         for m in (0,SphereNumber):
             mat                         = bpy.data.materials.new("TargetMat_%s" % m)    # Create new material
             if SphereMultiCol == 0:
-                mat.diffuse_color       = SphereColor                                # Set material color
+                mat.diffuse_color       = SphereColor                                   # Set material color
             elif SphereMultiCol == 1:
-                mat.diffuse_color       = SphereColor[m]                            # Set material color
-            mat.specular_intensity  = 0                                             # Set intensity of specular reflection (0-1)
+                mat.diffuse_color       = SphereColor[m]                                # Set material color
+            mat.specular_intensity  = 0                                                 # Set intensity of specular reflection (0-1)
     elif not(all(AllMats)):
         mat = AllMats[0]
         
@@ -53,29 +54,50 @@ def AddTargetObjects():
 
 
     #================= Create targets
-    bpy.ops.group.create(name="Targets")
-    #bpy.ops.object.group_link(group="Targets")
-    for sph in range(0, len(SphereLocs)):
-        if sph == 0:
-            bpy.ops.mesh.primitive_ico_sphere_add(
-                subdivisions    = 100,
-                size            = SphereRad,
-                calc_uvs        = False,
-                view_align      = False,
-                enter_editmode  = False,
-                location        = SphereLocs[sph],
-                rotation        = (0,0,0))
-            bpy.data.objects['Icosphere'].active_material   = mat                           # Set target color
-            bpy.data.objects['Icosphere'].name              = "Target %d" % sph             # Rename object as target ID
-            dispMod             = bpy.context.scene.objects["Target 0"].modifiers.new("Displace", type='DISPLACE')
-            dispMod.texture     = heightTex
-            dispMod.strength    = 0.001
-        elif sph  > 0:
-            d = bpy.data.objects['Target 0'].copy()
-            bpy.context.scene.objects.link(d)
-            d.location      = SphereLocs[sph]
-            d.name          = "Target %d" % sph  
-            
+    #bpy.ops.group.create(name="Targets")
+    ##bpy.ops.object.group_link(group="Targets")
+    
+    group                   = bpy.data.groups['Targets']    
+    instance                = bpy.data.objects.new('dupli_group', None)
+    instance.dupli_type     = 'GROUP'
+    instance.dupli_group    = group
+    bpy.context.scene.objects.link(instance)
+
+    if not TargetObjFile:
+        for sph in range(0, len(SphereLocs)):
+            if sph == 0:
+                bpy.ops.mesh.primitive_ico_sphere_add(
+                    subdivisions    = 100,
+                    size            = SphereRad,
+                    calc_uvs        = False,
+                    view_align      = False,
+                    enter_editmode  = False,
+                    location        = SphereLocs[sph],
+                    rotation        = (0,0,0))
+                bpy.data.objects['Icosphere'].active_material   = mat                           # Set target color
+                bpy.data.objects['Icosphere'].name              = "Target %d" % sph             # Rename object as target ID
+                dispMod             = bpy.context.scene.objects["Target 0"].modifiers.new("Displace", type='DISPLACE')
+                dispMod.texture     = heightTex
+                dispMod.strength    = 0.001
+            elif sph  > 0:
+                d = bpy.data.objects['Target 0'].copy()
+                bpy.context.scene.objects.link(d)
+                d.location      = SphereLocs[sph]
+                d.name          = "Target %d" % sph  
+    else:
+        for sph in range(0, len(SphereLocs)):
+            if sph == 0:
+                Import  = bpy.ops.import_scene.obj(filepath=TargetObjFile)          # Import target geometry from '.obj' file
+                Target  = bpy.context.selected_objects[0]                           # Get target object handle
+                Target.scale            = ((SphereRad, SphereRad, SphereRad))       # Set target size
+                Target.location         = SphereLocs[sph]                           # Set target location
+                Target.active_material  = mat                                       # Set target material
+                Target.name             = "Target %d" % sph                         # Rename object as target ID
+            elif shp > 0:
+                d = bpy.data.objects['Target 0'].copy()                             # Copy first target object
+                bpy.context.scene.objects.link(d) 
+                d.location      = SphereLocs[sph]                                   # Update location of new object
+                d.name          = "Target %d" % sph  
             
     bpy.context.scene.objects["Target %d" % sph].select = True
     bpy.ops.object.group_link(group="Targets")    
@@ -125,8 +147,10 @@ def RenderAllViews(Locs):
         bpy.ops.render.render(write_still=True, use_viewport=True)
     
         
+Prefix = '/Volumes/projects'        
+TargetObjFile = Prefix + '/murphya/MacaqueFace3D/GameRenders/Golf_Ball.obj'        
 #RemoveTargetObjects()
-Locs = AddTargetObjects()
+Locs = AddTargetObjects(TargetObjFile)
 
 #bpy.data.objects["HeaDRig"].pose.bones['blink'].location = mu.Vector((0,0,0.007))   # Close eye lids (blink)
 
