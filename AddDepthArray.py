@@ -15,6 +15,9 @@ import sys
 import math
 import random
 import numpy as np
+from InitBlendScene import InitBlendScene
+from GetOSpath import GetOSpath
+
 np.random.seed(0)                                               # Seed numpy's random number generator
 
 IsDefault = 1
@@ -24,7 +27,8 @@ if IsDefault==1:
     bpy.data.objects["Cube"].scale              = [0.1, 0.1, 0.1]
     bpy.data.objects["Cube"].rotation_euler     = [math.pi/4,math.pi/6,math.pi/4]
 
-Prefix = 'P:/'
+InitBlendScene(2,1)                 # Initialize scene geomerty
+Prefix = GetOSpath()                # Get OS-specific path
 
 #============ Set reference object parameters
 RefFrustumNear      = 0.2           # Near clipping-plane for reference objects (metres from world origin)
@@ -32,7 +36,7 @@ RefFrustumFar       = 0.2           # Far clipping-plane for reference objects (
 RefFrustumWidth     = 0.5           # Proportion of camera frustum width to fill with reference objects (0-1)
 RefFrustumHeight    = 0.3           # Proportion of camera frustum height to fill with reference objects (0-1)
 RefObjType          = 'ObjFile'      
-RefObjLayout        = 'Grid'        # 'Grid': 3D-grid layout; 'Plane': 2D plane of screen
+RefObjLayout        = 'Plane'        # 'Grid': 3D-grid layout; 'Plane': 2D plane of screen
 RefObjColor         = 'random'      # Randomize reference object's color?
 RefObjOrient        = 'random'      # Randomize reference object's orientations?
 RefObjBW            = 0             # Make reference object colors black and white?
@@ -43,16 +47,20 @@ RefObjFile          = Prefix + 'murphya/MacaqueFace3D/GameRenders/Golf_Ball.obj'
 #RefObjFile          = Prefix + 'murphya/MacaqueFace3D/GameRenders/RubiksCube.obj'
 
 #============ Set reference object material properties
-AllColors           = ((1,0,0),(1,0.5,0),(1,1,0),(0.5,1,0),(0,1,0),(0,1,0.5),(0,1,1),(0,0.5,1),(0,0,1),(1,0,1),(1,1,1))
+if RefObjBW == 0:
+    AllColors           = ((1,0,0),(1,0.5,0),(1,1,0),(0.5,1,0),(0,1,0),(0,1,0.5),(0,1,1),(0,0.5,1),(0,0,1),(1,0,1),(1,1,1))
+elif RefObjBW == 1:
+    AllColors           = ((0,0,0), (1,1,1))
+    
 for m in range(0, len(AllColors)):
     Material                         = bpy.data.materials.new("RefObjMat_%d" % m)           # Create new material and name it
     Material.diffuse_color           = AllColors[m]                                         # Set material color
     Material.specular_intensity      = 0.4                                                  # Set intensity of specular reflection (0-1)
     Material.emit                    = 0.0                                                  # Set light emission amount
-    Material.use_transparency        = FALSE                                                # Set whether to use alpha transparency
+    Material.use_transparency        = False                                                # Set whether to use alpha transparency
     Material.alpha                   = 1.0                                                  # Set how much alpha transparency
-    Material.use_cast_shadows        = FALSE                                                # Set whether to cast shadows
-    Material.use_shadows             = TRUE                                                 # Set whether to receive shadows
+    Material.use_cast_shadows        = False                                                # Set whether to cast shadows
+    Material.use_shadows             = True                                                 # Set whether to receive shadows
 
 #============ Calculate reference object locations
 Scene           = bpy.data.scenes["Scene"]
@@ -68,30 +76,32 @@ Position        = []
 Orientation     = []
 Scale           = []
 indx            = 0
+Spacing         = RefObjRadius*3
 
 if RefObjLayout == 'Grid':
-    Spacing     = RefObjRadius*3
     AllYpos     = np.arange(-RefFrustumNear, RefFrustumFar+Spacing, Spacing)            # Set range of object depths (y-axis)
-    AllXpos     = np.zeros([len(AllYpos),10])                                            
-    AllZpos     = np.zeros([len(AllYpos),10])         
-    Xpos        = []
-    Zpos        = []         
-    AllPos      = []      
-                  
-    for y in range(0, len(AllYpos)):                                                   # For each depth position... 
-        MaxX    = abs(math.tan(ThetaX)*(CamLoc[1]-AllYpos[y]))-RefObjRadius            # Calculate maximum width offset (X-axis)
-        MaxZ    = abs(math.tan(ThetaZ)*(CamLoc[1]-AllYpos[y]))-RefObjRadius            # Calculate maximum height offset (Z-axis)
-        Xpos    = np.arange(-MaxX, MaxX+Spacing, Spacing)
-        #Xpos    = np.concatenate( (np.arange(-MaxX, -MinX+Spacing, Spacing), np.arange(MinX, MaxX+Spacing, Spacing)), axis=0)
-        for x in range(0, len(Xpos)):
-            if abs(Xpos[x]) < MinX:
-                Zpos    = np.concatenate( (np.arange(-MaxZ, -MinZ+Spacing, Spacing), np.arange(MinZ, MaxZ+Spacing, Spacing)), axis=0)
-            elif abs(Xpos[x]) >= MinX:
-                Zpos    = np.arange(-MaxZ, MaxZ+Spacing, Spacing)
-            
-            for z in range(0, len(Zpos)):
-                AllPos.append([Xpos[x], AllYpos[y], Zpos[z]])
-                indx = indx+1
+elif RefObjLayout == 'Plane':
+    AllYpos     = [0]
+AllXpos     = np.zeros([len(AllYpos),10])                                            
+AllZpos     = np.zeros([len(AllYpos),10])         
+Xpos        = []
+Zpos        = []         
+AllPos      = []      
+              
+for y in range(0, len(AllYpos)):                                                   # For each depth position... 
+    MaxX    = abs(math.tan(ThetaX)*(CamLoc[1]-AllYpos[y]))-RefObjRadius            # Calculate maximum width offset (X-axis)
+    MaxZ    = abs(math.tan(ThetaZ)*(CamLoc[1]-AllYpos[y]))-RefObjRadius            # Calculate maximum height offset (Z-axis)
+    Xpos    = np.arange(-MaxX, MaxX+Spacing, Spacing)
+    #Xpos    = np.concatenate( (np.arange(-MaxX, -MinX+Spacing, Spacing), np.arange(MinX, MaxX+Spacing, Spacing)), axis=0)
+    for x in range(0, len(Xpos)):
+        if abs(Xpos[x]) < MinX:
+            Zpos    = np.concatenate( (np.arange(-MaxZ, -MinZ+Spacing, Spacing), np.arange(MinZ, MaxZ+Spacing, Spacing)), axis=0)
+        elif abs(Xpos[x]) >= MinX:
+            Zpos    = np.arange(-MaxZ, MaxZ+Spacing, Spacing)
+        
+        for z in range(0, len(Zpos)):
+            AllPos.append([Xpos[x], AllYpos[y], Zpos[z]])
+            indx = indx+1
 
 NoGridSpaces    = len(AllPos)                                                          # Count total number of grid spaces
 RefObjNumber    = round(RefObjDensity*NoGridSpaces)                                    # Calculate number of grid spaces to use      
@@ -106,18 +116,10 @@ for n in range(0, RefObjNumber):
     Scale.append([])
     
     #========= Randomize reference object location
-    if RefObjLayout == 'Grid':
-        Ypos = AllPos[SpacesToUse[n]][1]
-        Xpos = AllPos[SpacesToUse[n]][0]
-        Zpos = AllPos[SpacesToUse[n]][2]
+    Ypos = AllPos[SpacesToUse[n]][1]
+    Xpos = AllPos[SpacesToUse[n]][0]
+    Zpos = AllPos[SpacesToUse[n]][2]
 
-    else :
-        Ypos    = random.uniform(-RefFrustumNear, RefFrustumFar)                 # Set random depth (Y-axis)
-        MaxX    = abs(math.tan(ThetaX)* CamLoc[1]-Ypos)-RefObjRadius               # Calculate maximum width offset (X-axis)
-        MaxZ    = abs(math.tan(ThetaZ)* CamLoc[1]-Ypos)-RefObjRadius               # Calculate maximum height offset (Z-axis)
-        Xpos    = random.uniform(MinX, MaxX)*((-1)**random.randrange(2))         # Generate random x-position within range
-        Zpos    = random.uniform(MinZ, MaxZ)*((-1)**random.randrange(2))         # Generate random z-position within range
-        
     Position[n].append(Xpos)
     Position[n].append(Ypos)
     Position[n].append(Zpos)
