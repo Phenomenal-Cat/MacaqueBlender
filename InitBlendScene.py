@@ -13,19 +13,21 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=2, StereoFormat=1):
+def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
  
     #============ Set viewing geometry
     HemiProjection          = 0
     SqueezeFrame            = 0
     AddPDmarker             = 0
     if SetupGeometry == 1:                          #============ For SCNI setup 3 with ASUS VG278H LCDs in a mirror stereoscope
-        ViewingDistance    = 78.0 						            # Set viewing distance (centimeters)
-        MonitorSize        = [59.8, 33.5]  				             # Set physical screen dimensions (centimeters)
+        if not ViewingDistance:
+            ViewingDistance    = 78.0 						           # Set viewing distance (centimeters)
+        MonitorSize        = [59.8, 33.5]  				               # Set physical screen dimensions (centimeters)
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
     elif SetupGeometry == 2:                        #============ For SCNI neurophys rigs with LG 55" OLED 4K TV
-        ViewingDistance    = 90.0                                      # Set viewing distance (centimeters)
+        if not ViewingDistance:
+            ViewingDistance    = 90.0                                  # Set viewing distance (centimeters)
         BezelSize          = 0.8*2;                                    # Total monitor bezel (centimeters)
         MonitorSize        = [122.6, 71.8]                             # Set physical screen dimensions (centimeters)
         MonitorSize        = numpy.subtract(MonitorSize, [BezelSize, BezelSize])       # Adjust for bezel
@@ -33,18 +35,21 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         SqueezeFrame       = 1                                         # Horizontal squeee for SBS
     
     elif SetupGeometry == 3:                        #============ For SCNI setup 2 with Ezio FlexScan LCD
-        ViewingDistance    = 40.0                                      # Set viewing distance (centimeters)
+        if not ViewingDistance:
+            ViewingDistance    = 40.0                                  # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1280, 1024]                              # Set render resolution per eye (pixels)
      
     elif SetupGeometry == 4:                        #============ For Epson projectors in NIF 4.7T vertical MRI scanner
-        ViewingDistance    = 48.0                                      # Set viewing distance (centimeters)
+        if not ViewingDistance:
+            ViewingDistance    = 48.0                                  # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1920, 1200]                              # Set render resolution per eye (pixels)
         
     elif SetupGeometry == 5:                        #============ For SCNI hemispheric dome projection screen
         HemiProjection     = 1
-        ViewingDistance    = 100.0                                     # Set viewing distance (centimeters)
+        if not ViewingDistance:
+            ViewingDistance    = 100.0                                 # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1080, 1080]                              # Set render resolution per eye (pixels)
     
@@ -102,7 +107,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1):
         
                 
     Cam2                                                = bpy.data.cameras["Camera"]
-    Cam2.stereo.interocular_distance                    = 0.0035                        # Set for average Rhesus macaque IPD (meters)
+    Cam2.stereo.interocular_distance                    = 0.035                         # Set for average Rhesus macaque IPD (meters)
     Cam2.stereo.convergence_distance                    = ViewingDistance/100           # Cameras converge at screen distance from viewer
     Cam2.stereo.convergence_mode                        = 'OFFAXIS'                     # Off-axis frusta are required for physically correct renders
     
