@@ -4,3 +4,5 @@ github_username: MonkeyGone2Heaven
 description: >
   A Python library for parametric control of a 3D rigged macaque face model for visual and social neuroscience
 theme: jekyll-theme-cayman
+
+markdown: kramdown
