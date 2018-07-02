@@ -9,12 +9,20 @@ import bpy
 import math
 import mathutils
 
-MeshDirRaw  = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/MF3D_database/CT_meshes"
-MeshDirWrap = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/MF3D_database/CT_wrapped_meshes"
+MeshDirRaw      = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/MF3D_database/CT_meshes"
+MeshDirWrap     = "/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/MF3D_database/CT_wrapped_meshes"
+MeshDirEdited   = ""
+
+MeshDirRaw      = "/Volumes/rawdata/murphya/CT/CT_RawMeshes/"
+MeshDirWrap     = "/Volumes/procdata/murphya/Wrapped_meshes/"
+MeshDirEdited   = "/Volumes/procdata/murphya/CT/Edited Ent/"
+
 
 Identities      = [18]#:30
 FileFormatRaw   = ".stl"
 FileFormatWrap  = ".obj"
+FileFormatEdit  = ".obj"
+OpenEyesSuffix  = "01"
 
 for M in Identities:
     
