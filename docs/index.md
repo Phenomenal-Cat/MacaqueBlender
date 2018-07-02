@@ -3,7 +3,6 @@
 <img src= "https://user-images.githubusercontent.com/7523776/29430545-cbc198b0-8362-11e7-9826-5d5629ab22f4.gif" width="300" height="300" /> <img src= "https://user-images.githubusercontent.com/7523776/29431817-4fb301dc-8367-11e7-9e3c-4612c579d214.gif" width="300" height="300" /> 
 
 <iframe src="https://player.vimeo.com/video/243763351?autoplay=1&loop=1&autopause=0" width="300" height="300" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-<p>Parameterized Macaque Face Model.</p>
 
 This repository contains Python code for automated control of a Blender (www.blender.org) file containing a fully rigged, realistic 3-dimensional Rhesus macaque avatar. The mesh was generated from a CT scan of a live anesthetized Rhesus macaque, and edited in collaboration with a professional CGI artist (<a href="https://www.artstation.com/ishoop">Julien Duchemin</a>). The code allows quick setup of viewing geometry to match the experimental context, parametric manipulation of body, head and gaze direction, facial expression, skin and fur appearance, environment variables, and offline rendering of images and animations using the Cycles engine. In the future the code will include the ability to continuously morph facial identity based on an empirically-defined PCA "face-space" based on a library of CT data, as well as game engine (Blender/ Unity) control for real-time closed-loop social neuroscience experiments. 
 
