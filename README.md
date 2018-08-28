@@ -10,6 +10,7 @@ The following parameters of the model can be varied continuously:
 * Head orientation (spherical coordinates relative to body)
 * Gaze direction (spherical coordinates relative to head)
 * Eye vergence angle (determined automatically for gaze target distance)
+* Pupil dilation
 * Eye lid closure (i.e. blink)
 * Blend shapes for 4 stereotypical facial expression apexes:
   1) neutral
@@ -22,7 +23,7 @@ The following parameters of the model can be varied continuously:
   
 * Additional independent control of brow, ears, and jaw movement.
 * Fur length, density, color, texture map
-* Skin color, material reflectance (including sub-surbace scattering), and texture
+* Skin color, material reflectance (including sub-surface scattering), and texture
 * Lighting direction, intensity, color, and type
 
 ## References
