@@ -24,11 +24,19 @@ def appendSpherical_np(xyz):
     return ptsnew
 
 
-def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
+def GenerateLightArray(LampType='SPOT', LampArrangement='hemi', TargetLocation=0):
     
     # LampType = 'POINT'; 'SUN'; 'SPOT'; 'HEMI'; 
     # LampArrangement = 'circle'; 'hemi'; 'sphere'
-    # 
+     
+    #============== Add empty object as lamp target
+    if not TargetLocation:
+        TrackedObject = []
+    else:
+        TrackedObject = bpy.data.objects.new( "empty", None)
+        bpy.context.scene.objects.link(TrackedObject)
+        TrackedObject.name      = 'Lamp_target'
+        TrackedObject.location  = TargetLocation
     
     #=============== Set lamp array parameters
     FlipArray           = 1                     # 0 = pole is Y-axis; 1 = pole is Z-axis          
@@ -77,13 +85,27 @@ def GenerateLightArray(LampType='SPOT', LampArrangement='hemi'):
                 LampRot[li][0] = -LampRot[li][0]
             
             #============== Add lamp
-            lamp_data       = bpy.data.lamps.new(name='Lamp_%d' % (li), type=LampType)  # Create new lamp data block
+            lamp_data       = bpy.data.lamps.new(name='Lamp_%d' % (li), type=LampType)              # Create new lamp data block
             lamp_object     = bpy.data.objects.new(name='Lamp_%d' % (li), object_data=lamp_data)    # Create new lamp
             bpy.data.scenes[0].objects.link(lamp_object)                                            # Link new lamp to scene
-            
+
             lamp_object.location        = mu.Vector((LampLocs[li]))                                 # Position lamp
-            lamp_object.rotation_euler  = mu.Vector((LampRot[li]))                                  # Rotate lamp
             lamp_object.hide_render     = True                                                      # Turn lamp off by default
+            lamp_data.shadow_method     = 'RAY_SHADOW'
+            
+            if not TargetLocation:   #============= Apply target tracking constraint
+                lamp_object.rotation_euler  = mu.Vector((LampRot[li]))                                  # Rotate lamp
+            else:
+                ttc             = lamp_object.constraints.new(type='TRACK_TO')
+                ttc.target      = TrackedObject
+                ttc.track_axis  = 'TRACK_NEGATIVE_Z'
+                ttc.up_axis     = 'UP_X'
+
+                bpy.ops.object.select_all(action='DESELECT')
+                lamp_object.select = True
+                bpy.ops.object.visual_transform_apply()
+                lamp_object.constraints.remove(ttc)                 # Remove constraint once lamp is pointed at target
+            
             print('Lamp %d of %d added to scene...' % (li+1, LampNoAzAngles*LampNoElAngles))       
             LampObjects[li] = lamp_object            
             li = li+1;

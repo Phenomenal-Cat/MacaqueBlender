@@ -207,12 +207,8 @@ function LoadParams
             end
             
         case '.mat'
-            Temp    = load(fullfile(path, file));
-            if ~strcmp(Mov.Filename, Temp.Mov.Filename)
-                msgbox(sprintf('Movie name of selected parameters (%s) does not match current movie file (%s)! Aborting parameter import.', Temp.Mov.Filename, Mov.Filename));
-                return
-            end
-            Params  = Temp.Params;
+            load(fullfile(path, file));
+            
             
     end
     
@@ -335,7 +331,9 @@ function SaveParams(hObj, Evnt, Indx)
             writetable(cell2table([Headers; num2cell(CsvData)]), fullfile(path,file), 'writevariablenames', 0);
             
         case '.mat'     %=============== Write to .mat file (for re-use in Matlab)
-            save(fullfile(path,file), 'Mov','Params');
+            
+            
+            save(fullfile(path,file), 'Mov','Para );
             
     end
     

@@ -1,5 +1,5 @@
 
-#==================== RenderHumanGaze.py =====================
+#==================== RenderHumanAdaptation.py =====================
 # This script loads human face models (meshes and texture maps) from
 # the specified folder, sets up lighting and camera position in the
 # scene, and then renders all requested stimuli.
@@ -8,10 +8,8 @@ import glob
 import bpy
 import os
 import math
-import mathutils as mu
-import numpy as np
+import mathutils
 from GenerateLightArray import GenerateLightArray
-from InitBlendScene import InitBlendScene
 
 #============= Get children objects
 def getChildren(myObject):
@@ -21,63 +19,57 @@ def getChildren(myObject):
             children.append(ob) 
     return children 
 
-#============= Set eye tracker position from gaze angle
-def GazeLookAt(Az, El, Rad):
-    Y   = -np.cos(math.radians(Az))*np.cos(math.radians(El))*Rad
-    X   = np.sin(math.radians(Az))*np.cos(math.radians(El))*Rad
-    Z   = np.sin(math.radians(El))*Rad
-    GazeXYZ = mu.Vector((X, Y, Z))
-    return GazeXYZ    
-
-#============= Set model import parameters
-Prefix          = 'Q:'
-RenderDir       = Prefix + '/murphya/Stimuli/MacaqueAvatar/3D_Renders/HumanGaze/'
+#============= Set parameters
+Prefix          = 'P:'
+RenderDir       = Prefix + '/murphya/AdaptationExp/HumanSet_2/'
 ModelDir        = Prefix + '/murphya/AdaptationExp/HumanModel/'
 ModelsToUse     = ['01','04','033','035','036']
-ModelExpStrings = ['Neutral']#,'Yawn','Rage','Coo','Smile']
+ModelExpStrings = ['Neutral','Yawn','Rage','Coo','Smile']
+ModelAzmuths    = [-60, -30, 0, 30, 60]
 ModelScale      = (0.1,0.1,0.1)
 MeshFormat      = '.OBJ'
 TexFormat       = '.jpg'
 MeshPrefix      = 'Male03_'
-
-#============= Set model pose and appearance parameters
-HeadAzmuths     = [-60, -30, 0, 30, 60]
-HeadElevations  = [0]
-GazeAzmuths     = [-30, -15, 0, 15, 30]
-GazeElevations  = [0]
+FOV             = 40
+ViewingDistance = 1                 # Viewing distance (metres)
+Resolution      = [1920, 1080]
 
 
 #============= Setup camera and lighting
-Scene               = bpy.data.scenes['Scene']
+Scene                                   = bpy.data.scenes['Scene']
+Scene.unit_settings.system              = 'METRIC'
+Scene.render.engine                     = 'CYCLES'
+Scene.render.resolution_x               = Resolution[0]
+Scene.render.resolution_y               = Resolution[1]
+Scene.render.resolution_percentage      = 100
+Cam                                     = bpy.data.objects["Camera"]
+Cam.location                            = mathutils.Vector((0, -ViewingDistance,0))
+#Scene.camera.data.angle                 = FOV
+Scene.camera.data.type                  = 'PERSP'    
 
-StereoFormat        = 1
-ViewingDistance     = 90
-InitBlendScene(2, StereoFormat, ViewingDistance)
-
-Cam             = bpy.data.objects["Camera"]
-Lighting        = bpy.data.worlds["World"].light_settings
+Lighting = bpy.data.worlds["World"].light_settings
 Lighting.use_environment_light  = True              # Turn environemnt lighting on
-Lighting.environment_energy     = 1                 # Set to normal energy 
+Lighting.environment_energy     = 0.2               # Set to low energy (to enhance directional spot lighting)
 
-#if bpy.data.objects.get('Lamp_7') is None:
-#    Lamps = GenerateLightArray('SPOT','circle',(0,0,0))                                   # Generate a hemisphere of spotlight lamp objects in scene
+
+if bpy.data.objects.get('Lamp_7') is None:
+    Lamps = GenerateLightArray('SPOT','circle',(0,0,0))                                   # Generate a hemisphere of spotlight lamp objects in scene
 
 
 #============= Load meshes and textures into scene
-EyeTracker  = bpy.data.objects['EyeTracker']
 MeshFile    = []
 TexFile     = []
 for m in range(0, len(ModelsToUse)):
     
     if bpy.data.objects.get(MeshPrefix + ModelExpStrings[m]) is not None:
         print('Mesh already in scene: ' + ModelsToUse[m])
-        HeadObj     = bpy.data.objects[MeshPrefix + ModelExpStrings[m]]
-        HeadObj.hide           = False          # Make mesh visible in preview
-        HeadObj.hide_render    = False          # Make mesh visible in render output
+        obj     = bpy.data.objects[MeshPrefix + ModelExpStrings[m]]
+        obj.hide           = False          # Make mesh visible in preview
+        obj.hide_render    = False          # Make mesh visible in render output
         
-        EyeObj = getChildren(HeadObj)           # Get handles of eye objects parented to current mesh
+        EyeObj = getChildren(obj)           # Get handles of eye objects parented to current mesh
         for eye in EyeObj:
-            eye.hide         = False            # Make eyes visible
+            eye.hide         = False         # Make eyes visible
             eye.hide_render  = False 
         
     else:
@@ -89,9 +81,9 @@ for m in range(0, len(ModelsToUse)):
         path, filename      = os.path.split(MeshFile)                                   # Get filename and path
         objh                = bpy.ops.import_scene.obj(filepath=MeshFile[0])            # Load .obj mesh
         bpy.context.selected_objects[0].name = MeshPrefix + ModelExpStrings[m]          # Rename the imported mesh
-        HeadObj                 = bpy.data.objects[MeshPrefix + ModelExpStrings[m]]
-        HeadObj.scale           = ModelScale;
-        HeadObj.rotation_euler  = (90, 0, math.radians(180))
+        obj                 = bpy.data.objects[MeshPrefix + ModelExpStrings[m]]
+        obj.scale           = ModelScale;
+        obj.rotation_euler  = (90, 0, math.radians(180))
 
 
     if bpy.data.materials.get(ModelExpStrings[m] + '_mat') is not None:
@@ -106,7 +98,7 @@ for m in range(0, len(ModelsToUse)):
             material                                = bpy.data.materials.new(matname)
             material.diffuse_color                  = (1, 1, 1)
             material.specular_intensity             = 0.25
-            HeadObj.data.materials.append(material)
+            obj.data.materials.append(material)
         
         #======== Import texture image
         TexName     = ModelExpStrings[m] + '_tex'
@@ -126,33 +118,30 @@ for m in range(0, len(ModelsToUse)):
     
 
     #=========== Loop through head orientations
-    StartRot = HeadObj.rotation_euler
-    for Haz in HeadAzmuths:
-        for Hel in HeadElevations:
-            HeadObj.rotation_euler = (math.radians(Hel), math.radians(Haz), 0)
+    StartRot = obj.rotation_euler
+    AzDiffs  = [x - ModelAzmuths[i - 1] for i, x in enumerate(ModelAzmuths)][1:]
+    for Haz in ModelAzmuths:
+        if Haz == ModelAzmuths[0]:
+            obj.rotation_euler = (StartRot[0], StartRot[1], StartRot[2] + math.radians(Haz))
+        else:
+            obj.rotation_euler = (StartRot[0], StartRot[1], StartRot[2] + math.radians(AzDiffs[0]))
+        
+        #=========== Loop through lighting directions
+        lon = 1;
+        for lon in Lamps:
+            for loff in Lamps:
+                Lamps[loff].hide_render = True
+            Lamps[lon].hide_render = False
             
-             #=========== Loop through gaze angles
-            for Gaz in GazeAzmuths:
-                for Gel in GazeElevations:
-                    GazeXYZ = GazeLookAt(Gaz, Gel, ViewingDistance/100)
-                    EyeTracker.location = GazeXYZ
-
-                    #=========== Loop through lighting directions
-                    lon = 1;
-                    #for lon in Lamps:
-                    #    for loff in Lamps:
-                    #        Lamps[loff].hide_render = True
-                    #    Lamps[lon].hide_render = False
-                        
-                    #=========== Render image and save to file
-                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                    RenderFilename = "Human_%s_%s_Haz%d_Hel%d_Gaz%d_Gel%d_Lamp%d.png" % (MeshPrefix, ModelExpStrings[m], Haz, Hel, Gaz, Gel, lon)
-                    if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
-                        print("Now rendering: " + RenderFilename + " . . .\n")
-                        bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
-                        bpy.ops.render.render(write_still=True, use_viewport=True)
-                    elif os.path.isfile(RenderDir + "/" + RenderFilename) == 1:
-                        print("File " + RenderFilename + " already exists. Skipping . . .\n")
+            #=========== Render image and save to file
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            RenderFilename = "HumanAdapt_%s_%s_Haz%d_Lamp%d.png" % (MeshPrefix, ModelExpStrings[m], Haz, lon)
+            if os.path.isfile(RenderDir + "/" + RenderFilename) == 0:
+                print("Now rendering: " + RenderFilename + " . . .\n")
+                bpy.context.scene.render.filepath = RenderDir + "/" + RenderFilename
+                bpy.ops.render.render(write_still=True, use_viewport=True)
+            elif os.path.isfile(RenderDir + "/" + RenderFilename) == 1:
+                print("File " + RenderFilename + " already exists. Skipping . . .\n")
 
 
     #=========== Turn off expression mesh
