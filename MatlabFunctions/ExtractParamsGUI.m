@@ -19,7 +19,8 @@ VocalOffsetSmp  = find(audio.data(:,1) > VolumeThresh, 1, 'last');
 VocalOnsetTime  = SampleTimes(VocalOnsetSmp);
 VocalOffsetTime = SampleTimes(VocalOffsetSmp);
 
-ParamNames = {'Jaw opening','Expression amount','Ear flap','Brow raise', 'Head Elevation'};
+ParamNames  = {'Jaw opening','Expression amount','Ear flap','Brow raise', 'Head Elevation'};
+Fig.Headers	= {'Time','blink','Kiss','jaw','ears','Fear','yawn','eyebrow','HeadTracker'};
 for n = 1:numel(ParamNames)
     Params(n).Name = ParamNames{n};
     Params(n).Timecourse = zeros(1, Mov.NoFrames);
@@ -307,38 +308,39 @@ function SaveParams(hObj, Evnt, Indx)
 %     Default = fullfile(Mov.DefaultPath, [Mov.Filename, '.mat']);
 %     [file, path]   = uiputfile('*.mat','Save parameters', Default);
 %     save(fullfile(path,file), 'Params','Mov');
-    
+    FileTypes       = {'.mat','.csv'};
    	Default         = fullfile(Mov.DefaultPath, 'ExtractedParams', [Mov.Filename, '.csv']);
     [file, path]    = uiputfile({'*.csv';'*.mat'},'Save parameters', Default);
     if file == 0
         return;
     end
-    [~,~,ext]       = fileparts(file);
-    switch ext
-        case '.csv'     %=============== Write to .csv file (read by Python)
-            Headers         = {'Time','blink','Kiss','jaw','ears','Fear','yawn','eyebrow','HeadTracker'};
-            CsvData         = zeros(Mov.NoFrames, numel(Headers));
-            CsvData(:,1)    = Mov.FrameTimes;
-            CvsColumns      = [4,6,5,8,9];
-            for n = [1,3,4,5]
-                if Fig.ParamValues(n,1) == 1
-                    CsvData(:,CvsColumns(n))    = Params(n).Timecourse*Fig.ParamValues(n,3); % Jaw
+    [~,file,ext]       = fileparts(file);
+    for f = 1:numel(FileTypes)  %=========== Save in all requested formats
+        ext = FileTypes{f};
+        switch ext
+            case '.csv'         %=============== Write to .csv file (read by Python)
+                CsvData         = zeros(Mov.NoFrames, numel(Fig.Headers));
+                CsvData(:,1)    = Mov.FrameTimes;
+                CvsColumns      = [4,6,5,8,9];
+                for n = [1,3,4,5]
+                    if Fig.ParamValues(n,1) == 1
+                        CsvData(:,CvsColumns(n))    = Params(n).Timecourse*Fig.ParamValues(n,3); % Jaw
+                    end
                 end
-            end
-            if ~isempty(strfind(lower(Mov.Filename), 'scream'))     % Scream = Fear
-                CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
-            elseif ~isempty(strfind(lower(Mov.Filename), 'coo'))    % Coo = Kiss
-                CsvData(:,3)    = Params(2).Timecourse*Fig.ParamValues(2,3);
-            else
-                CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
-            end
-            writetable(cell2table([Headers; num2cell(CsvData)]), fullfile(path,file), 'writevariablenames', 0);
-            
-        case '.mat'     %=============== Write to .mat file (for re-use in Matlab)
-            save(fullfile(path,file), 'Mov','Params');
-            
+                if ~isempty(strfind(lower(Mov.Filename), 'scream'))                 % Scream = Fear
+                    CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                elseif ~isempty(strfind(lower(Mov.Filename), 'coo'))                % Coo = Kiss
+                    CsvData(:,3)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                else                                                                % Pant/ Grunt = Fear
+                    CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                end
+                writetable(cell2table([Fig.Headers; num2cell(CsvData)]), fullfile(path,[file,'.csv']), 'writevariablenames', 0);
+
+            case '.mat'     %=============== Write to .mat file (for re-use in Matlab)
+                save(fullfile(path,[file,'.mat']), 'Mov','Params');
+
+        end
     end
-    
 end
 
 %================== SelectParam
