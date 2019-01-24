@@ -27,14 +27,13 @@ if IsDefault==1:
     bpy.data.objects["Cube"].scale              = [0.1, 0.1, 0.1]
     bpy.data.objects["Cube"].rotation_euler     = [math.pi/4,math.pi/6,math.pi/4]
 
-InitBlendScene(2,1)                 # Initialize scene geomerty
 Prefix = GetOSpath()                # Get OS-specific path
 
 #============ Set reference object parameters
 RefFrustumNear      = 0.2           # Near clipping-plane for reference objects (metres from world origin)
 RefFrustumFar       = 0.2           # Far clipping-plane for reference objects (metres from world origin)
-RefFrustumWidth     = 0.5           # Proportion of camera frustum width to fill with reference objects (0-1)
-RefFrustumHeight    = 0.3           # Proportion of camera frustum height to fill with reference objects (0-1)
+RefFrustumWidth     = 0.3           # Proportion of camera frustum width to fill with reference objects (0-1)
+RefFrustumHeight    = 0.2          # Proportion of camera frustum height to fill with reference objects (0-1)
 RefObjType          = 'ObjFile'      
 RefObjLayout        = 'Grid'        # 'Grid': 3D-grid layout; 'Plane': 2D plane of screen
 RefObjColor         = 'random'      # Randomize reference object's color?
@@ -179,6 +178,10 @@ for n in range(0, RefObjNumber):
     RefObj.scale            = Scale[n]                                          # Set RefObj size
     RefObj.location         = Position[n]                                       # Set RefObj location
     RefObj.rotation_euler   = Orientation[n]                                    # Set RefObj orientation
+    print('There are %d layers' % len(RefObj.layers))
+    for l in range(0, len(RefObj.layers)):
+        RefObj.layers[l]    = False
+    RefObj.layers[2]        = True                                              # Assign object to render layer 2
     #bpy.ops.object.mode_set(mode='OBJECT')                                      # Enter object mode
     RefObj.active_material              = RefObjMat                             
     RefObj.material_slots[0].link       = 'OBJECT'

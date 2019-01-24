@@ -31,7 +31,7 @@ end
 
 %================== Open figure
 ScreenRes   = get(0,'screensize');
-Fig.fh      = figure('position',ScreenRes,'units','pixels');
+Fig.fh      = figure('position',ScreenRes-[0,0,0,200],'units','pixels');
 Fig.axh(1)  = subplot(4,2,1:2:5);
 Fig.imh     = image(video.frames(1).cdata);
 axis equal tight off
@@ -48,6 +48,7 @@ hold on;
 Ylims = get(gca,'ylim');
 ph = patch([repmat(VocalOnsetTime,[1,2]), repmat(VocalOffsetTime,[1,2])], Ylims([1,2,2,1]), ones(1,4), 'facecolor', [1,0.5,0.5], 'edgecolor','none','facealpha', 0.5);
 title('Audio waveform','horizontalalignment','left')
+set(gca,'xticklabel',[]);
 
 Fig.axh(3) = subplot(numel(ParamNames)+2,2,4);
 SegmentLength = audio.rate/20;
@@ -56,7 +57,7 @@ hold on;
 plot(repmat(VocalOnsetTime,[1,2]), ylim, '-r','linewidth',2);
 title('Spectrogram','horizontalalignment','left')
 set(Fig.axh([2]),'xlim',[0, SampleTimes(end)]);
-
+xlabel('Time (ms)');
 
 %================= Plot parameter time-courses
 Fig.ActiveParam = 1;
@@ -76,6 +77,10 @@ for n = 1:numel(Params)
   	set(Fig.axh(n+3),'buttondownfcn',{@SelectParam,n},'xlim',[1,Mov.NoFrames], 'xtick', Mov.FrameNumbers, 'xticklabel', Fig.XtickLabels);
     Fig.plh(n)          = plot([0,0], [0,1], '-g', 'linewidth', 2);
     axis tight;
+    box off;
+    if n == numel(Params)
+        xlabel('Frame number');
+    end
     
     %======= Plot interactive points on image
     axes(Fig.axh(1));
@@ -294,7 +299,7 @@ function LoadMovieClip()
     for n = 1:numel(Params)
         Params(n).Timecourse   = nan(1, Mov.NoFrames);
     end
-    
+
     if exist('Fig','var') && isfield(Fig,'fh') && ishandle(Fig.fh)
         set(Fig.imh, 'cdata', video.frames(1).cdata);
         set(Fig.th,'string',sprintf('Frame %d', 1));

@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
+def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=80):
  
     #============ Set viewing geometry
     HemiProjection          = 0
@@ -21,7 +21,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
     AddPDmarker             = 0
     if SetupGeometry == 1:                          #============ For SCNI setup 3 with ASUS VG278H LCDs in a mirror stereoscope
         if not ViewingDistance:
-            ViewingDistance    = 78.0 						           # Set viewing distance (centimeters)
+            ViewingDistance    = 78.0 						           # Set viewing distance (centimeters)bpy.data.
         MonitorSize        = [59.8, 33.5]  				               # Set physical screen dimensions (centimeters)
         Resolution         = [1920, 1080]                              # Set render resolution per eye (pixels)
     
@@ -52,11 +52,18 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
             ViewingDistance    = 100.0                                 # Set viewing distance (centimeters)
         MonitorSize        = [34.0, 27.2]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1080, 1080]                              # Set render resolution per eye (pixels)
-    
+        
+    elif SetupGeometry == 6:                        #============ For Romanski lab use (2D image can be scaled post-hoc)
+        if not ViewingDistance:
+            ViewingDistance    = 50.0                                  # Set viewing distance (centimeters)
+        MonitorSize        = [22.0, 22.0]                              # Set physical screen dimensions (centimeters)
+        Resolution         = [1080, 1080]                              # Set render resolution per eye (pixels)
+        StereoFormat       = 0
+        
     else:
     	print("Unknown setup!")
     
-    FOV                     = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)       # Set camera horizontal field of view (radians)
+    
     
     #============ Add photodiode marker to scene
     if AddPDmarker == 1:
@@ -76,22 +83,24 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
         
     
     #============ Set scene settings
-    Scene                           = bpy.data.scenes['Scene']
-    Scene.unit_settings.system      = 'METRIC'
-    Scene.render.engine             = 'CYCLES'
-    Scene.render.resolution_x       = Resolution[0]
-    Scene.render.resolution_y       = Resolution[1]
-    Scene.render.resolution_percentage = 100
-    Scene.render.use_stamp          = False							# Turn render stamps off
-    Scene.render.display_mode       = 'SCREEN'
-    Scene.cycles.film_transparent   = True
+    Scene                                       = bpy.data.scenes[0]
+    Scene.unit_settings.system                  = 'METRIC'
+    Scene.render.engine                         = 'CYCLES'
+    Scene.render.resolution_x                   = Resolution[0]
+    Scene.render.resolution_y                   = Resolution[1]
+    Scene.render.resolution_percentage          = 100
+    Scene.render.use_stamp                      = False							# Turn render stamps off
+    Scene.render.display_mode                   = 'SCREEN'
+    Scene.render.image_settings.color_depth     = '8'                           # Set color bit-depth (8 or 16 for PNG)
+    Scene.render.use_placeholder                = True                          
+    Scene.cycles.film_transparent               = True
     
     #============ Set stereoscopic 3D settings
     StereoSet                                           = bpy.context.scene.render.image_settings
     if StereoFormat == 0:                                                   #=========== 2D rendering
         Scene.render.use_multiview                      = False
-        Scene.render.views_format                       = 'INDIVIDUAL'
-        StereoSet.views_format                          = 'INDIVIDUAL' 
+        #Scene.render.views_format                       = 'INDIVIDUAL'
+        #StereoSet.views_format                          = 'INDIVIDUAL' 
     elif StereoFormat == 1:                                                 #=========== Side-by-side stereo rendering
         Scene.render.use_multiview                      = True
         Scene.render.views_format                       = 'STEREO_3D'
@@ -113,19 +122,26 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=60):
     
     
     #============ Set camera settings
+    FOV                                                 = 2*math.atan((MonitorSize[0]/2)/ViewingDistance)       # Set camera horizontal field of view (radians)
+    print(math.degrees(FOV))
     Cam                                                 = bpy.data.objects["Camera"]
     Cam.location                                        = mathutils.Vector((0, -ViewingDistance/100,0))
-    Scene.camera.data.angle                             = FOV
-    Scene.camera.data.ortho_scale                       = MonitorSize[0]/100
-    Scene.camera.data.type                              = 'PERSP'    
+    Cam.data.lens_unit                                  = 'FOV'
+    Cam.data.angle                                      = FOV
+    #Cam.data.sensor_width                               = Cam.data.lens
+    Cam.data.ortho_scale                                = MonitorSize[0]/100
+    Cam.data.type                                       = 'PERSP'    
     if HemiProjection ==1:                
+        Cam.data.lens                                   = 5
         Scene.camera.data.type                          = 'PANO'
-        Scene.camera.data.cycles.panorama_type          = 'FISHEYE_EQUISOLID'  
+        Scene.camera.data.cycles.panorama_type          = 'FISHEYE_EQUIDISTANT'  
+        Scene.render.resolution_x                       = Resolution[1]
+        Scene.render.resolution_y                       = Resolution[1]
         
     
     #============ Set path tracing
     bpy.context.scene.cycles.progressive                = 'PATH'
-    bpy.context.scene.cycles.samples                    = 50
+    bpy.context.scene.cycles.samples                    = 200
     bpy.context.scene.cycles.use_square_samples         = False
     bpy.context.scene.cycles.max_bounces                = 128
     bpy.context.scene.cycles.min_bounces                = 3

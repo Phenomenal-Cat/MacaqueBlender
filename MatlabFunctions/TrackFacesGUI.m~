@@ -1,0 +1,226 @@
+function TrackFacesGUI
+
+%============================= TrackFacesGUI.m ============================
+% This simple GUI is designed for loading short movie clips and manually 
+% tracking frame-by-frame location and size of faces or other anatomical
+% structures.
+%
+% 02/20/2018 - Written by Aidan Murphy
+%==========================================================================
+
+global Mov Fig video audio Params
+
+
+MovieFile = '/projects/murphya/Stimuli/Movies/OrigMovies/Movie1.avi';
+LoadMovieClip(MovieFile);  % User selects movie clip to load
+
+%================== Open figure
+ScreenRes   = get(0,'screensize');
+Fig.fh      = figure('position',ScreenRes-[0,0,0,200],'units','pixels');
+Fig.MovAxh  = subplot(4,2,1:2:5);
+Fig.imh     = image(video.frames(1).cdata);
+set(Fig.MovAxh, 'position', [0.05, 0.32, 0.4, 0.5]);
+hold on;
+axis equal tight off
+Fig.fn      = title(sprintf('%s', strrep(Mov.Filename,'_',' ')),'fontsize',14);
+Fig.th      = text(10,10,sprintf('Frame %d', 1),'color',[1 1 1],'fontsize', 16);
+Fig.Colors  = [1,0,0;0,1,0;0,0,1;0,1,1; 1,1,0];
+
+%================== Add GUI controls
+Fig.Slider.Step     = [1/(Mov.NoFrames-1), 10/(Mov.NoFrames-1)];
+set(Fig.MovAxh, 'units','pixels');
+FramePos            =  get(Fig.MovAxh,'position');
+Fig.Slider.Pos      = [FramePos([1,2,3]),20]-[0 20 0 0];
+Fig.SliderHandle    = uicontrol('Style','slider','SliderStep',Fig.Slider.Step,'HorizontalAlignment','Left','pos',Fig.Slider.Pos,'Callback',{@NextFrame},'parent',Fig.fh);
+Fig.GUI.BoxPos      = [50,50,600, 100];
+Fig.GUI.LabelDim    = [100 25];
+Fig.GUI.Labels      = {'Load movie','Load params','Save movie','Save params',};
+Fig.GUI.InputStyles = {'pushbutton','pushbutton', 'pushbutton', 'pushbutton','pushbutton'};
+Fig.GUI.handle      = uibuttongroup('Title','Options','FontSize',16,'Units','pixels','Position',Fig.GUI.BoxPos);
+for i = 1:numel(Fig.GUI.Labels)
+ 	Fig.GUI.InputPos{i}     = [20+(i-1)*(Fig.GUI.LabelDim(1)+10), 20, Fig.GUI.LabelDim];
+    Fig.GUI.InputHandle(i)  = uicontrol('Style',Fig.GUI.InputStyles{i},'String',Fig.GUI.Labels{i},'HorizontalAlignment','Left','pos',Fig.GUI.InputPos{i},'parent',Fig.GUI.handle,'Callback',{@GUISelect,i});
+end
+Fig.Tracker.BoxPos      = [50,200,600, 100];
+Fig.Tracker.LabelDim    = [100 25];
+Fig.Tracker.Labels      = {'Add tracker','Remove tracker','Hide tracker','Copy prev','Interpolate'};
+Fig.Tracker.InputStyles = {'pushbutton','pushbutton', 'pushbutton', 'pushbutton', 'pushbutton'};
+Fig.Tracker.handle      = uibuttongroup('Title','Trackers','FontSize',16,'Units','pixels','Position',Fig.Tracker.BoxPos);
+for i = 1:numel(Fig.Tracker.Labels)
+ 	Fig.Tracker.InputPos{i}     = [20+(i-1)*(Fig.Tracker.LabelDim(1)+10), 20, Fig.Tracker.LabelDim];
+    Fig.Tracker.InputHandle(i)  = uicontrol('Style',Fig.Tracker.InputStyles{i},'String',Fig.Tracker.Labels{i},'HorizontalAlignment','Left','pos',Fig.Tracker.InputPos{i},'parent',Fig.Tracker.handle,'Callback',{@TrackerSelect,i});
+end
+
+
+
+%================= Plot timecourses
+Fig.TimecourseLabels = {'Xpos','Ypos','width','height'};
+for tc = 1:numel(Fig.TimecourseLabels)
+    Fig.axh(tc)     	= subplot(numel(Fig.TimecourseLabels), 2, tc*2);
+    for n = 1:numel(Params)
+        eval(sprintf('Data = Params(n).%s', Fig.TimecourseLabels{tc}));
+        Fig.ParamsH(n,tc) = plot(Mov.FrameNumbers, Data,'.-k','color',Fig.Colors(n,:),'markersize',10);
+    end
+    hold on;
+    grid on
+    title(Fig.TimecourseLabels{tc}, 'horizontalalignment','left');
+%  	set(Fig.axh(n+3),'buttondownfcn',{@SelectParam,n},'xlim',[1,Mov.NoFrames], 'xtick', Mov.FrameNumbers, 'xticklabel', Fig.XtickLabels);
+    Fig.plh(n)          = plot([0,0], [0,1], '-g', 'linewidth', 2);
+    axis tight;
+    box off;
+    if tc == numel(Fig.TimecourseLabels)
+        xlabel('Frame number');
+    end
+end
+set(Fig.axh, 'tickdir', 'out');
+
+
+end
+
+%================== GUI input controls
+function GUISelect(hObj, Evnt, Indx)
+    switch Indx
+        case 1
+            LoadMovieClip;
+        case 2
+            LoadParams;
+        case 3
+            SaveMovie;
+        case 4
+            SaveParams;
+    end
+end
+
+%================== GUI input controls
+function TrackerSelect(hObj, Evnt, Indx)
+    switch Indx
+        case 1
+            AddTracker;
+        case 2
+            RemoveTracker;
+     	case 3
+            HideTracker;
+        case 4
+            CopyLastFrame;
+        case 5
+            InterpolateFrames;
+    end
+end
+
+%================== Add new tracker object
+function AddTracker
+    global Fig Params Mov
+    n = numel(Params)+1;
+    Params(n).Xpos      = repmat(Mov.width/2, [1, Mov.NoFrames]);
+    Params(n).Ypos      = repmat(Mov.height/2, [1, Mov.NoFrames]);
+    Params(n).width     = repmat(100, [1, Mov.NoFrames]);
+    Params(n).height    = repmat(100, [1, Mov.NoFrames]);
+    axes(Fig.MovAxh);                                                   % Make main video axes current
+    if exist('drawellipse.m', 'file')
+        Fig.TrackerH(n)     = drawellipse('Center', [Mov.width/2, Mov.height/2], 'SemiAxes', [100, 200], 'StripeColor',Fig.Colors(n,:), 'FaceAlpha', 0.3);
+    else
+        Fig.TrackerH(n)     = ellipseselect('init',100, 200, Mov.width/2, Mov.height/2, pi, '--k');
+        set(Fig.TrackerH(n), 'color', Fig.Colors(n,:));
+    end
+    
+    UpdateTimecourses();
+end
+
+%================== Copy data from previous frame
+function CopyLastFrame
+    global Fig Params Mov
+    if Mov.CurrentFrame > 1
+        Fig.ActiveParam
+        Params(Fig.ActiveParam).LinePoints(:,Mov.CurrentFrame)  = Params(Fig.ActiveParam).LinePoints(:,Mov.CurrentFrame-1);
+        Params(Fig.ActiveParam).Timecourse(Mov.CurrentFrame)    = Params(Fig.ActiveParam).Timecourse(Mov.CurrentFrame-1);
+        setPosition(Fig.LineH(Fig.ActiveParam), [Params(Fig.ActiveParam).LinePoints(1:2,Mov.CurrentFrame), Params(Fig.ActiveParam).LinePoints(3:4,Mov.CurrentFrame)]);
+    end
+end
+
+%================== Update time course plots
+function UpdateTimecourses()
+    global Fig Params
+
+  	for n = 1:numel(Params) 
+        Params(n).Xpos(Mov.CurrentFrame) = Fig.TrackerH(n).UserData.x0;
+        Params(n).Ypos(Mov.CurrentFrame) = Fig.TrackerH(n).UserData.y0;
+       	Params(n).width(Mov.CurrentFrame) = Fig.TrackerH(n).UserData.a;
+        Params(n).height(Mov.CurrentFrame) = Fig.TrackerH(n).UserData.b;
+
+    	for tc = 1:numel(Fig.TimecourseLabels)   
+            eval(sprintf('Data = Params(n).%s', Fig.TimecourseLabels{tc}));
+        	set(Fig.ParamsH(n,tc), 'ydata', Data);
+        end
+    end
+end
+
+%================== Advance frame
+function NextFrame(hObj, Evnt, Indx)
+    global Fig video Mov Params
+    Mov.CurrentFrame = round(get(hObj, 'value')*(Mov.NoFrames-1)+1);
+    set(Fig.imh, 'cdata', video.frames(Mov.CurrentFrame).cdata);
+    set(Fig.th, 'string', sprintf('Frame %d', Mov.CurrentFrame));
+   	set(Fig.plh, 'xdata', repmat((Mov.CurrentFrame),[1,2]));
+
+    for n = 1:numel(Params)
+        Fig.TrackerH(n).UserData.x0 = Params(n).Xpos(Mov.CurrentFrame);
+        Fig.TrackerH(n).UserData.y0 = Params(n).Ypos(Mov.CurrentFrame);
+       	Fig.TrackerH(n).UserData.a  = Params(n).width(Mov.CurrentFrame);
+        Fig.TrackerH(n).UserData.b  = Params(n).height(Mov.CurrentFrame);
+    end
+end
+
+%================== Load movie clip
+function LoadMovieClip(MovieFile)
+    global Mov Fig Params audio video
+    if ismac Prefix = '/Volumes'; else Prefix = []; end
+    if ~exist('MovieFile','var')
+        Mov.DefaultPath  	= fullfile(Prefix, '/projects/murphya/Stimuli/Movies/');
+        [file, path, ext]   = uigetfile('*.avi;*.mov;*.mp4;*.mpg;*.wmv', 'Select movie clip', [Mov.DefaultPath,'OriginalMovies/']);
+        Mov.FullFilename  	= fullfile(path, file);  
+    else
+        Mov.FullFilename  	= MovieFile;
+    end
+	[~,Mov.Filename]   	= fileparts(Mov.FullFilename);
+    msgh = msgbox(sprintf('Loading movie file %s...', Mov.Filename),'Loading');
+    
+    try	 %=============== Try method 1: mmread.m
+    	[video, audio]      = mmread(Mov.FullFilename, [],[],[],false);                    % Load movie file and audio
+        Mov.NoFrames        = numel(video.frames);
+        Mov.FPS             = video.rate;
+        Mov.width           = size(video.frames(1).cdata, 2);
+        Mov.height          = size(video.frames(1).cdata, 1);
+        
+    catch %=============== Try method 2: videoreader.m
+        videoobj          	= VideoReader(Mov.FullFilename);
+        AudioFilename       = fullfile(Mov.DefaultPath, 'OriginalWAVs', [Mov.Filename,'.wav']);
+        if ~exist(AudioFilename, 'file')
+            error('Audio file ''%s'' does not exist!', AudioFilename);
+        end
+      	aud                 = audioread(AudioFilename);                     % < Only works for .mp4 movie files
+        audio.data          = aud;
+        audio.rate          = round(size(audio.data,1)/videoobj.Duration);
+        Mov.FPS             = videoobj.FrameRate;
+        Mov.width           = videoobj.width;
+        Mov.height          = videoobj.height;
+        f = 1;
+        while hasFrame(videoobj)
+            video.frames(f).cdata = readFrame(videoobj);
+            f = f+1;
+        end
+        Mov.NoFrames        = numel(video.frames);
+    end
+    Mov.FrameTimes     	= linspace(0, (Mov.NoFrames-1)/Mov.FPS, Mov.NoFrames);
+    Mov.FrameNumbers    = 1:1:Mov.NoFrames;
+    Mov.CurrentFrame    = 1;
+    for n = 1:numel(Params)
+        Params(n).Timecourse   = nan(1, Mov.NoFrames);
+    end
+
+    if exist('Fig','var') && isfield(Fig,'fh') && ishandle(Fig.fh)
+        set(Fig.imh, 'cdata', video.frames(1).cdata);
+        set(Fig.th,'string',sprintf('Frame %d', 1));
+        set(Fig.fn,'string',sprintf('%s', strrep(Mov.Filename,'_',' ')));
+    end
+    close(msgh);
+end

@@ -13,6 +13,7 @@ for each condition requested.
 import bpy
 import mathutils as mu
 import math
+import os
 import numpy as np
 import socket
 #import AddDepthArray
@@ -23,29 +24,44 @@ import OrientAvatar as OA
 from SetDepthMapMode import SetDepthMapMode
 
 
+def HeadLookAt(El, Az):
+    Rad = 0.7
+    Z   = np.cos(math.radians(Az))*np.cos(math.radians(El))*-Rad
+    X   = np.sin(math.radians(Az))*np.cos(math.radians(El))*-Rad
+    Y   = np.sin(math.radians(El))*Rad
+    HeadXYZ = mu.Vector((X, Y, Z))
+    return HeadXYZ
+
+
 bpy.types.UserPreferencesEdit.keyframe_new_interpolation_type = 'LINEAR'    # F-curve interpolation defaults to linear
 
 
 #============ Initialize scene
 Prefix              = GetOSpath()                                   # Get path prefix for OS
-BlenderDir          = Prefix[1] + '/murphya/Stimuli/MacaqueAvatar/3D_Renders/'            
-RenderDir           = BlenderDir + "BodyHeadGaze" #"PositionInDepth"
+BlenderDir          = Prefix[0] + '/murphya/Stimuli/AvatarRenders_2018/'            
+RenderDir           = BlenderDir + "PeripheralGaze"
 SetupGeometry       = 2                                             # Specify which physical setup stimuli will be presented in
 StereoFormat        = 1                                             # Render as stereo-pair?
-ViewingDistance     = 100                                           # Distance of subject from screen (cm) 
+ViewingDistance     = 70                                           # Distance of subject from screen (cm) 
 InitBlendScene(SetupGeometry, StereoFormat, ViewingDistance)        # Initialize scene
 #AddDepthArray()                                                     # Add depth array?
 
-#============ Set rendering parameters						
+#============ Set rendering parameters	
 GazeElAngles    = [0]#[-20,-10, 0, 10, 20]                              # Set elevation angles (degrees)
 GazeAzAngles    = [0]#[-30, -20, -10, 0, 10, 20, 30]                    # Set azimuth angles (degrees)
 HeadElAngles    = [0]
-HeadAzAngles    = [0]
-BodyElAngles    = [-20,-10, 0, 10, 20] 
-BodyAzAngles    = [-30, -20, -10, 0, 10, 20, 30] 
-#Distances       = [-20, 0, 20] 						             # Set object distance from origin (centimeters)
+HeadAzAngles    = [-45,-30,-15,0,15,30,45]
+BodyElAngles    = [0]
+BodyAzAngles    = [0]
+Distances       = [-20, 0, 20] 						                   # Set object depth distance from origin (centimeters)
+Eccentricities  = [-30, -15, 0, 15, 30]		
+LocationX       = np.empty([len(Distances), len(Eccentricities)])
+for d in range(0, len(Distances)):
+    for e in range(0, len(Eccentricities)):
+        LocationX[d][e] = math.tan(math.radians(Eccentricities[e]))*(ViewingDistance + Distances[d])
+
 #Scales          = [0.666, 1.0, 1.333]                               # Physical scale of object (proportion)
-Distances       = [0] 						                        # Set object distance from origin (centimeters)
+#Distances       = [0] 						                        # Set object distance from origin (centimeters)
 Scales          = [1.0]                                             # Physical scale of object (proportion)
 FurLengths      = [0.7]                                             # Set relative length of fur (0-1)
 ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]          # Expression names   
@@ -59,12 +75,17 @@ IncludeEyesOnly     = 0;                                            # Include ey
 InfiniteVergence    = 0;                                            # Fixate (vergence) at infinity?
 GazeAtCamera        = 0;                                            # Update gaze direction to maintain eye contact with camera?
 
-NoConditions        = len(HeadElAngles)*len(HeadAzAngles)*len(GazeElAngles)*len(GazeAzAngles)*len(Distances)*len(Scales)*len(ExpNo)        # Calculate total number of conditions
+NoConditions        = len(HeadElAngles)*len(HeadAzAngles)*len(Distances)*len(Eccentricities)        # Calculate total number of conditions
 if IncludeEyesOnly == 1:
     NoConditions = NoConditions*2;                      
     
 msg                 = "Total renders = %d" % NoConditions				
 print(msg)
+
+#============== FOR QUICK TESTS
+#Scene                                    = bpy.data.scenes['Scene']  # Quick and dirty render!
+#Scene.render.resolution_percentage      = 50
+#bpy.context.scene.cycles.samples        = 10
 
 
 #=============== Set cyclopean eye as avatar origin point?
@@ -109,47 +130,27 @@ for exp in ExpNo:
     for s in Scales:
         body.scale = mu.Vector((OrigBodyScale[0]*s, OrigBodyScale[1]*s, OrigBodyScale[2]*s))        # Apply scaling to entire avatar
     
-        for d in Distances:
-            body.location = mu.Vector((OrigBodyLoc[0], OrigBodyLoc[1]+d/100, OrigBodyLoc[2])) 
+        for d in range(0, len(Distances)):
+            for e in range(0, len(LocationX[d])):
+                body.location = mu.Vector((LocationX[d][e]/100, Distances[d]/100, OrigBodyLoc[2])) 
 
-            for Bel in BodyElAngles:
-                for Baz in BodyAzAngles:
-                
-                    
-                    for Hel in HeadElAngles:
-                        for Haz in HeadAzAngles:
-                            
-                            for Gel in GazeElAngles:
-                                for Gaz in GazeAzAngles:
 
-                                    #=========== Rotate body, head, and gaze
-                                    if GazeAtCamera == 1:                                                           # Gaze in direction of camera?
-                                        if InfiniteVergence == 0:                                                   # Gaze converges at camera distance?
-                                            CamLocation = bpy.data.scenes["Scene"].camera.location
-                                            head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
-                                            FixationDistance = ViewingDistance
-                                            
-                                        elif InfiniteVergence == 1:                                                 # Gaze converges at (approximately) infinity?
-                                            FixationDistance = 100
-                                            OA.OrientAvatar((Bel, Baz), (Hel, Haz), (Gel, Gaz, FixationDistance))   # Apply rotations to body, head and gaze
-                                    else:
-                                        FixationDistance = ViewingDistance
-                                        
-                                    OA.OrientAvatar((Bel, Baz), (Hel, Haz), (Gel, Gaz, FixationDistance))           # Apply rotations to body, head and gaze
-                                    
-                                    #=========== Perform any necessary translations
-                                    if OffsetCyclopean == 1:
-                                        EyeLocations = OA.GetEyeLocations()                                         # Get current world coordinates for eye objects
-                                        OA.CenterCyclopean(CyclopeanOrigin)                                         # Shift avatar to maintain position of cycloean eye at requested coordinates
-
-                                    #=========== Render color and Z-buffer images
-                                    for z in [0,1]:
-                                        FileFormat = SetDepthMapMode(z)
-                                        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                                        Filename = "MacaqueGaze_%s_Baz%d_Bel%d_Haz%d_Hel%d_Gaz%d_Gel%d_dist%d_scale%d%s" % (ExpStr[exp], Baz, Bel, Haz, Hel, Gaz, Gel, d, s*100, FileFormat)
-                                        print("Now rendering: " + Filename + " . . .\n")
-                                        bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-                                        bpy.ops.render.render(write_still=True, use_viewport=True)
+                for Hel in HeadElAngles:
+                    for Haz in HeadAzAngles:
+                            HeadXYZ = HeadLookAt(Hel, Haz)
+                            head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+            
+                            #=========== Render color and Z-buffer images
+                            for z in [0,1]:
+                                FileFormat = SetDepthMapMode(z)
+                                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                                Filename = "MacaqueGaze_%s_Haz%d_dist%d_ecc%d%s" % (ExpStr[exp], Haz, Distances[d], Eccentricities[e], FileFormat)
+                                if os.path.isfile(RenderDir + "/" + Filename) == 0:
+                                    print("Now rendering: " + Filename + " . . .\n")
+                                    bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+                                    bpy.ops.render.render(write_still=True, use_viewport=True)
+                                elif os.path.isfile(RenderDir + "/" + Filename) == 1:
+                                    print("File " + Filename + " already exists. Skipping . . .\n")
 
 print("Rendering completed!\n")
 
