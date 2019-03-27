@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=80):
+def InitBlendScene(SetupGeometry=7, StereoFormat=1, ViewingDistance=80):
  
     #============ Set viewing geometry
     HemiProjection          = 0
@@ -59,6 +59,12 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=80):
         MonitorSize        = [22.0, 22.0]                              # Set physical screen dimensions (centimeters)
         Resolution         = [1080, 1080]                              # Set render resolution per eye (pixels)
         StereoFormat       = 0
+        
+    elif SetupGeometry == 7:                        #============ For Murphy & Leopold 2019 stimulus set #1
+        ViewingDistance     = 57.0  
+        MonitorSize         = [60, 34]
+        Resolution          = [3840, 2160]
+        SqueezeFrame        = 0    
         
     else:
     	print("Unknown setup!")

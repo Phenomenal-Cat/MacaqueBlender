@@ -19,9 +19,10 @@ if exist(VertFile,'file')
     fprintf('Loading %s...\n', VertFile);
     load(VertFile);
 else
-    %MeshDir     = '/Volumes/Seagate Backup 1/NIH_PhD_nonthesis/7. 3DMacaqueFaces/MF3D_database/CT_wrapped_meshes';
-    MeshDir     = '/Volumes/PROCDATA/murphya/CT/Edited Ent/';
-    MeshFiles   = wildcardsearch(MeshDir, 'M*.obj');
+    MeshDir     = '/Volumes/Seagate Backup 1/NIH_Postdoc/MF3D database/CT_8_ReorderedMeshes';
+    OutputDir   = '/Volumes/Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23';
+    %MeshDir     = '/Volumes/PROCDATA/murphya/CT/Edited Ent/';
+    MeshFiles   = wildcardsearch(MeshDir, 'M*_01.obj');
     MeshFiles   = MeshFiles(cellfun(@isempty, strfind(MeshFiles, 'Average')));
 end
 
@@ -31,7 +32,7 @@ DoPCA           = 1;
 PlotPCA         = 1;  
 PlotMeshes      = 1;                          	% Plot meshes?
 SaveAntiFace    = 0;    
-SaveMeanFace    = 0;
+SaveMeanFace    = 1;
 Background      = [1 1 1];                    	% Set background color
 FaceColor       = [1 1 2]/2;                 	% Set surface mesh face color (only used if no texture provided)
 EdgeColor       = 'none';%[0 0 0];%'none';     	% Set surface mesh edge color  
@@ -99,7 +100,7 @@ end
 %================ Plot each mesh
 if PlotMeshes == 1
     figure('position', get(0,'screensize'));
-    axh = tight_subplot(4, 5, 0.02, 0.02, 0.02);
+    axh = tight_subplot(5, 5, 0.02, 0.02, 0.02);
     for m = 1:size(Obj.AllVerts,1)
         axes(axh(m));
         FV.faces    = squeeze(Obj.AllFaces(m,:,:))'+1;
@@ -163,7 +164,7 @@ end
 
 %================ Save average mesh
 if SaveMeanFace == 1
-    MeanMeshFile = fullfile(MeshDir, sprintf('AverageMesh%d_%s.obj', numel(MeshFiles), date));
+    MeanMeshFile = fullfile(OutputDir, sprintf('AverageMesh_N=%d.obj', numel(MeshFiles)));
     write_quadobj(MeanMeshFile, Obj.MeanMesh, FV.faces, TexCoords);
 end
 
@@ -200,7 +201,7 @@ if DoPCA == 1
         figure; 
         for n = 1:size(pca_vertex.coeff,3)
             FV.vertices = pca_vertex.coeff(:,:,n);
-            subplot(4,5,n);
+            subplot(5,5,n);
             ph(n) = patch(FV, 'facecolor', [1,1,1]/2, 'edgecolor','none');
             axis vis3d tight off;                                           % Turn axes off
             material([Ambient Diffuse Specular SpecExp SpecCol]);       	% Set material properties
@@ -213,7 +214,7 @@ if DoPCA == 1
     if ~exist('MeshDir','var')
         MeshDir = cd;
     end
-    Matfilename = fullfile(MeshDir, sprintf('AllMeshPCA.mat'));
+    Matfilename = fullfile(OutputDir, sprintf('AllMeshPCA.mat'));
     save(Matfilename, 'pca_vertex', 'Obj', 'FV');
 end
 

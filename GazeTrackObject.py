@@ -6,6 +6,8 @@
 import bpy
 import math
 import numpy as np
+import os
+
 
 def makeInvisible(ob, reverse):
     for child in ob.children:
@@ -41,7 +43,7 @@ bpy.context.scene.objects.link(obj)
 obj.name = "TrackedObject"
 
 #============= Make empty parent to target object
-bpy.data.objects["Banana"].parent = obj
+bpy.data.objects["Icosphere"].parent = obj
 
 #============= Make gaze follow target by updating constraints
 AllBones    = bpy.data.objects["HeaDRig"].pose.bones
@@ -56,8 +58,8 @@ for e in EyeBones:
 #PathData..dimensions = '2D'         # '2D' or '3D' ?
 #PathObj     = bpy.data.objects.new('PathObj', PathData)
 #bpy.context.scene.objects.link(PathObj)                         
-PathRadius          = 0.15                           # path radius (m)
-PathCenter          = (0, -0.2, 0)                  # origin of path (m)
+PathRadius          = 0.05                           # path radius (m)
+PathCenter          = (0, -0.3, 0)                  # origin of path (m)
 PathOrientation     = np.radians([90, 0, 0])        # rotation of path from horizontal plane (degrees)
 PathTime            = 4                             # Time (seconds) for object to complete path
 FPS                 = 30                            # Frame rate (Hz)
@@ -71,6 +73,7 @@ Follow.use_curve_follow     = False
 
 
 #============== Animate object motion
+bpy.data.scenes['Scene'].frame_start        = 1
 bpy.data.scenes['Scene'].frame_current      = 1									        # First frame
 bpy.data.curves["BezierCircle"].eval_time   = 0
 bpy.data.curves["BezierCircle"].keyframe_insert(data_path = "eval_time")
@@ -83,17 +86,20 @@ bpy.data.scenes['Scene'].frame_end          = PathTime*FPS
 bpy.data.curves["BezierCircle"].animation_data.action.fcurves[0].extrapolation = 'LINEAR'
 
 FilenamePrefix = ["Macaque_eyes_gazefollow_", "Macaque_head_gazefollow_", "Object_"]
+RenderDir       = 'P:/murphya/MacaqueFace3D/Methods Manuscript/Figures/Movies/ExpressionDemo/3_GazeFollow'
 
 #============== Loop through rendering
-for loop in range(0, 3):
+loop = 0
     
-    if loop == 0:
-        makeInvisible(bpy.data.objects["Root"],1)           # Unhide avatar
-        makeInvisible(obj,0)                                # Hide tracked object
-    elif loop == 1:
-        AllBones["Head"].constraints["IK"].target = obj     # Add head motion
-    elif loop == 3:
-        makeInvisible(bpy.data.objects["Root"],0)           # Hide avatar
-        makeInvisible(obj,1)                                # Unhide tracked object 
-        
-    RenderAnimation(RenderDir, FilenamePrefix[loop])
+if loop == 0:
+    makeInvisible(bpy.data.objects["Root"],1)           # Unhide avatar
+    #makeInvisible(obj,0)                                # Hide tracked object
+elif loop == 1:
+    AllBones["Head"].constraints["IK"].target = obj     # Add head motion
+    
+    
+elif loop == 3:
+    makeInvisible(bpy.data.objects["Root"],0)           # Hide avatar
+    makeInvisible(obj,1)                                # Unhide tracked object 
+    
+RenderAnimation(RenderDir, FilenamePrefix[loop])

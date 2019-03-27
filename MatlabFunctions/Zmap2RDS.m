@@ -33,31 +33,35 @@ function [RDSFile, Display] = Zmap2RDS(ZmapFile, RDSFile, ScaleDepth, Display)
 
 if nargin == 0
     %ZmapFile  	= '/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/Renders/DepthMaps/Macaque_Zmap_neutral_az0_el0_dist0_sc12.hdr';
-    ZmapFile  	= '/PROJECTS/murphya/Stimuli/AvatarRenders_2018/BodyHeadGaze/MacaqueGaze_Neutral_Baz-10_Bel-10_Haz0_Hel0_Gaz0_Gel0_dist0_scale100.exr';
-    OutputDir   = '/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/Renders/RDS/';
+    ZmapFile  	= '/projects/murphya/Stimuli/AvatarRenders_2018/StereoShape/MacaqueDepth_Haz-30_He-30_DepthMap.hdr';
+    OutputDir   = '/projects/murphya/Stimuli/AvatarRenders_2018/StereoShape/';
 end
 if nargin < 2
     ScaleDepth  = 1;
 end
 
 %============== LOAD DEPTH MAP
-[path, filename, ext] = fileparts(ZmapFile);
-switch ext
-    case '.hdr'
-        DepthMap = hdrread(ZmapFile);
-    case '.exr'
-        if ismac
-           fprintf('Warning: Exrread.mex is only compiled for Mac OS X!\n');
-        end
-        OpenEXRdir = '/Volumes/projects/murphya/Matlab Code/APMSubfunctions/3D_rendering/openexr-matlab-master';
-        addpath(OpenEXRdir);
-        DepthMap = exrread(ZmapFile);
-        DepthMap = DepthMap(:,:,1);
-    case '.mat'
-        load(ZmapFile);
-    otherwise
-        frpintf('WARNING: non-HDR image formats do no suppport metric depth!\n');
-        DepthMap = imread(ZmapFile);        
+if iscell(ZmapFile) || ischar(ZmapFile)
+    [path, filename, ext] = fileparts(ZmapFile);
+    switch ext
+        case '.hdr'
+            DepthMap = hdrread(ZmapFile);
+        case '.exr'
+            if ismac
+               fprintf('Warning: Exrread.mex is only compiled for Mac OS X!\n');
+            end
+            OpenEXRdir = '/projects/murphya/Matlab Code/APMSubfunctions/3D_rendering/openexr-matlab-master';
+            addpath(OpenEXRdir);
+            DepthMap = exrread(ZmapFile);
+            DepthMap = DepthMap(:,:,1);
+        case '.mat'
+            load(ZmapFile);
+        otherwise
+            frpintf('WARNING: non-HDR image formats do no suppport metric depth!\n');
+            DepthMap = imread(ZmapFile);        
+    end
+elseif isnumeric(ZmapFile)
+    DepthMap = ZmapFile;
 end
 if ~exist('RDSFile','var')
     [~,filename] = fileparts(ZmapFile);
@@ -76,7 +80,7 @@ end
 InvertDepth = ScaleDepth/abs(ScaleDepth);       
 PlotData    = 0;
 IPD         = 3.5;                                      % Interpupillary distance of subject (cm)
-VD          = 70;                                       % Viewing distance of subject (cm)
+VD          = 60;                                       % Viewing distance of subject (cm)
 SaveAlpha   = 0;
 DisplayRes  = [size(DepthMap,2), size(DepthMap,1)];    	% Display resolution (pixels) [w, h]
 MapLims     = [size(DepthMap,1), size(DepthMap,2)];
@@ -85,19 +89,19 @@ Display.PixPerCm = DisplayRes./DisplaySize;
 DotDensity  = 0.5;                                      % Density of dots
 DotDiam   	= 2;                                        % Dot diameter (pixels)
 DotType     = 1;                                        % 1 = circles; 2 = Anti-aliased circles
-DotBackground	= 1;                                    % 0 = blank background; 1 = background in plane of screen
+DotBackground	= 0;                                    % 0 = blank background; 1 = background in plane of screen
 OututFormat     = 'SBSsq';                              % 'SBS' = side-by-side; 'SBSsq' = SBS squeezed; 'Ana' = R-B anaglyph
 
 
 % Display.ScreenID    = max(Screen('screens'));
 % Display.Rect        = Screen(0,'rect');
 % Display.Stereomode  = 0;
-switch OututFormat
-    case 'SBSsq'
-        EyeOffset   = [0, Display.Rect(3)/2];
-    case 'SBS' 
+% switch OututFormat
+%     case 'SBSsq'
+%         EyeOffset   = [0, Display.XScreenRect(3)/2];
+%     case 'SBS' 
         EyeOffset   = [0, size(DepthMap,2)];
-end
+% end
 if SaveAlpha == 0
     BackgroundRGB = [127,127,127];
 elseif SaveAlpha == 1
@@ -118,10 +122,10 @@ if PlotData == 1
     grid on
     set(axh(1),'clim',get(axh(2),'xlim'));
 end 
-ObjectPixels    = DepthMap(DepthMap(:)<9*10^9);
+ObjectPixels    = DepthMap(DepthMap(:)<2);
 DepthLims       = [min(ObjectPixels), max(ObjectPixels)];
-FilenameDist    = str2double(ZmapFile((strfind(ZmapFile, 'dist')+4): (strfind(ZmapFile, '_sc')-1)));
-MeanDistance    = VD + FilenameDist;
+%FilenameDist    = str2double(ZmapFile((strfind(ZmapFile, 'dist')+4): (strfind(ZmapFile, '_sc')-1)));
+%MeanDistance    = VD + FilenameDist;
 
 
 if ~exist('Display','var')

@@ -1,4 +1,4 @@
-function SaveMacaquePCA(PCAmatfile)
+%function SaveMacaquePCA(PCAmatfile)
 
 %========================= SavePCAmeshes.m ================================
 % This function loads original mesh surface data (.obj files) from the
@@ -20,22 +20,25 @@ else
     Prefix = [];
 end
 % if nargin == 0
-    PCAmatfile = fullfile(Prefix, 'procdata/murphya/CT/Edited Ent/AllMeshPCA.mat');
+    %PCAmatfile = fullfile(Prefix, 'procdata/murphya/CT/Edited Ent/AllMeshPCA.mat');
+	%OriginalMeshFile    = fullfile(Prefix, '/projects/murphya/MorphBlender/BaseMesh_50K_openmouth.obj');
+    %OutputDir           = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/PCAmeshes_2018_v2');
+    PCAmatfile          = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/AllMeshPCA_N=23.mat');
+    OriginalMeshFile    = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/AverageMesh_N=23.obj');
+    OutputDir           = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/');
 % end
 load(PCAmatfile);
 
 %========== Load original mesh file's texture coordinates
-OriginalMeshFile    = fullfile(Prefix, '/projects/murphya/MorphBlender/BaseMesh_50K_openmouth.obj');
 obj             = LoadOBJFile(OriginalMeshFile);
-
-OutputDir       = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/PCAmeshes_2018_v2');
-max_pc          = 5;
-SavePCA         = 0;
-range_sd_score  = [-3,-2,-1,0,1,2 3];
+max_pc          = 10;
+SavePCA         = 1;
+%range_sd_score  = [-3,-2,-1,0,1,2 3];
+range_sd_score  = [-3,3];
 coeff_vertex    = pca_vertex.coeff;
 score_vertex    = pca_vertex.score;
 exp_vertex      = pca_vertex.exp;
-prefix_pcatype  = 'ind';
+prefix_pcatype  = 'PCA_N=23_';
 EdgeColor       = 'none';
 Backface        = 'reverselit';
 Ambient         = 0.3;                         	% Ambient light strength          
@@ -88,10 +91,10 @@ xlabel('PC1', 'fontsize', 18);
 ylabel('PC2', 'fontsize', 18);
 zlabel('PC3', 'fontsize', 18);
 colormap(cool);
-cbh = colorbar;
-set(cbh, 'Ticks', [0.2:0.2:1.2], 'FontSize', 14);
+%cbh = colorbar;
+%set(cbh, 'Ticks', [0.2:0.2:1.2], 'FontSize', 14);
 set(gca,'clim',[0.2, 1.2]);
-set(cbh.Label, 'String','Euclidean Distance from Mean','FontSize', 18);
+%set(cbh.Label, 'String','Euclidean Distance from Mean','FontSize', 18);
 
 fh(4) = figure;
 histogram(PCdist, 'BinEdges',0:0.1:1.4)

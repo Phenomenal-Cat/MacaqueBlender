@@ -19,13 +19,13 @@ VocalOffsetSmp  = find(audio.data(:,1) > VolumeThresh, 1, 'last');
 VocalOnsetTime  = SampleTimes(VocalOnsetSmp);
 VocalOffsetTime = SampleTimes(VocalOffsetSmp);
 
-ParamNames  = {'Jaw opening','Expression amount','Ear flap','Brow raise', 'Head Elevation'};
+ParamNames  = {'Jaw opening','Expression amount','Ear flap','Brow raise', 'Blink', 'Head Elevation'};
 Fig.Headers	= {'Time','blink','Kiss','jaw','ears','Fear','yawn','eyebrow','HeadTracker'};
 for n = 1:numel(ParamNames)
-    Params(n).Name = ParamNames{n};
-    Params(n).Timecourse = zeros(1, Mov.NoFrames);
+    Params(n).Name          = ParamNames{n};
+    Params(n).Timecourse    = zeros(1, Mov.NoFrames);
     StartPos = [(video.width/2)-50,(video.width/2)+50, (video.height/2)-(10*n),(video.height/2)-(10*n)]';
-    Params(n).LinePoints = repmat(StartPos,[1, Mov.NoFrames]);
+    Params(n).LinePoints    = repmat(StartPos,[1, Mov.NoFrames]);
 end
 
 
@@ -61,8 +61,9 @@ xlabel('Time (ms)');
 
 %================= Plot parameter time-courses
 Fig.ActiveParam = 1;
-Fig.LineColors  = [1,0,0;0,1,0;0,0,1;0,1,1; 1,1,0];
+Fig.LineColors  = [1,0,0;0,1,0;0,0,1;0,1,1; 1,1,0; 1,0,1; 1,0.5,0];
 Fig.XtickLabels = {[],[],[],[]};
+Fig.ParamSmoothing = zeros(1,numel(Params));
 for f = 1:ceil(numel(Mov.FrameNumbers)/5)
     Fig.XtickLabels = [Fig.XtickLabels, {f*5,[],[],[],[]}];
 end
@@ -80,6 +81,8 @@ for n = 1:numel(Params)
     box off;
     if n == numel(Params)
         xlabel('Frame number');
+    else
+        set(gca,'xticklabel',[]);
     end
     
     %======= Plot interactive points on image
@@ -93,9 +96,9 @@ end
 set(Fig.axh(Fig.ActiveParam+3),'color',[1,0.5,0.5]);
 
 %================= Add timecourse GUI control elements
-Fig.ParamLabels     = {'Enabled','Use image?','Scale max.','Draw curve'};
-Fig.ParamType     	= {'CheckBox','CheckBox', 'Edit','PushButton'};
-Fig.ParamValues     = [ones(numel(Params),3), zeros(numel(Params),1)];
+Fig.ParamLabels     = {'Enabled','Use image?','Scale max.','Smooth curve', 'Interpolate'};
+Fig.ParamType     	= {'CheckBox','CheckBox', 'Edit','ToggleButton','PushButton'};
+Fig.ParamValues     = [ones(numel(Params),3), zeros(numel(Params),2)];
 set(Fig.axh(2:end), 'units', 'pixels');
 for n = 1:numel(Params)
     TCpos = get(Fig.axh(n+3), 'position');
@@ -177,9 +180,16 @@ switch Indx2
          set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).Timecourse*Fig.ParamValues(Indx1, Indx2));
          set(Fig.axh(Indx1+3), 'ylim', [0, Fig.ParamValues(Indx1, Indx2)]);
          
-    case 4 %============ Draw curve
-        
-        
+    case 4 %============ Smooth curve
+        Fig.ParamSmoothing(Indx1) = get(hObj, 'value');
+        if Fig.ParamSmoothing(Indx1) == 1
+            FilterWidth = 7;
+            %Params(Indx1).SmoothedTimecourse = smooth(Params(Indx1).Timecourse', FilterWidth, 'rloess')';
+            Params(Indx1).SmoothedTimecourse = smoothdata(Params(Indx1).Timecourse, 'gaussian', FilterWidth);
+            set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).SmoothedTimecourse);
+        elseif Fig.ParamSmoothing(Indx1) == 0
+            set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).Timecourse);
+        end
         
 end
     
@@ -264,7 +274,7 @@ end
 function LoadMovieClip()
     global Mov Fig Params audio video
     if ismac Prefix = '/Volumes'; else Prefix = []; end
-    Mov.DefaultPath  	= fullfile(Prefix, '/projects/murphya/MacaqueFace3D/Macaque_video/');
+    Mov.DefaultPath  	= fullfile(Prefix, '/projects/murphya/MacaqueFace3D/ExpressionDynamics/');
     [file, path, ext]   = uigetfile('*.avi;*.mov;*.mp4;*.mpg;*.wmv', 'Select movie clip', [Mov.DefaultPath,'OriginalMovies/']);
     Mov.FullFilename  	= fullfile(path, file);  
   	[~,Mov.Filename]   	= fileparts(Mov.FullFilename);
@@ -326,18 +336,28 @@ function SaveParams(hObj, Evnt, Indx)
             case '.csv'         %=============== Write to .csv file (read by Python)
                 CsvData         = zeros(Mov.NoFrames, numel(Fig.Headers));
                 CsvData(:,1)    = Mov.FrameTimes;
-                CvsColumns      = [4,6,5,8,9];
-                for n = [1,3,4,5]
+                CvsColumns      = [4,6,5,8,2,9];
+                for n = [1,3,4,5,6]
+                    if Fig.ParamSmoothing(n) == 1
+                        TC = Params(n).SmoothedTimecourse;
+                    elseif Fig.ParamSmoothing(n) == 0
+                        TC = Params(n).Timecourse;
+                    end
                     if Fig.ParamValues(n,1) == 1
-                        CsvData(:,CvsColumns(n))    = Params(n).Timecourse*Fig.ParamValues(n,3); % Jaw
+                        CsvData(:,CvsColumns(n))    = TC*Fig.ParamValues(n,3); % Jaw
                     end
                 end
+                if Fig.ParamSmoothing(2) == 1
+                    TC = Params(2).SmoothedTimecourse;
+                elseif Fig.ParamSmoothing(2) == 0
+                    TC = Params(2).Timecourse;
+                end
                 if ~isempty(strfind(lower(Mov.Filename), 'scream'))                 % Scream = Fear
-                    CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                    CsvData(:,6)    = TC*Fig.ParamValues(2,3);
                 elseif ~isempty(strfind(lower(Mov.Filename), 'coo'))                % Coo = Kiss
-                    CsvData(:,3)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                    CsvData(:,3)    = TC*Fig.ParamValues(2,3);
                 else                                                                % Pant/ Grunt = Fear
-                    CsvData(:,6)    = Params(2).Timecourse*Fig.ParamValues(2,3);
+                    CsvData(:,6)    = TC*Fig.ParamValues(2,3);
                 end
                 writetable(cell2table([Fig.Headers; num2cell(CsvData)]), fullfile(path,[file,'.csv']), 'writevariablenames', 0);
 

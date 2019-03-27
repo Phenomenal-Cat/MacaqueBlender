@@ -27,14 +27,16 @@ def SetDepthMapMode(ZmapOn=0):
             if bpy.data.objects.get(obj) is not None:
                 bpy.data.objects[obj].hide_render     = True                  # Hide corneas from rendering (cause issues with Z map)
                                                    
-        Scene.render.image_settings.file_format     = 'OPEN_EXR'
+        #Scene.render.image_settings.file_format     = 'OPEN_EXR'
+        Scene.render.image_settings.file_format     = 'HDR'
         Scene.render.image_settings.use_zbuffer     = True
         Scene.render.use_multiview                  = False             
         if bpy.app.version < (2, 79, 0):                                    # Thanks a lot Blender devs!
             RenderNode  = Nodes['Render Layers'].outputs['Z']  
         else:
             RenderNode  = Nodes['Render Layers'].outputs['Depth']   
-        FileFormat  = '.exr'
+        #FileFormat  = '.exr'
+        FileFormat  = '.hdr'
         
     elif ZmapOn == 0:
         for obj in AvatarObjs:
