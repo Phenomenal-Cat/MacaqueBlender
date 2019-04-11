@@ -8,11 +8,21 @@ for each condition requested for the stimulus set 1 released with Murphy & Leopo
 import bpy
 import mathutils as mu
 import math
+import os
 import numpy as np
 import socket
 from GetOSpath import GetOSpath
 from InitBlendScene import InitBlendScene
 
+def RenderFrame(Filename, RenderDir, Render=1, Overwrite=0):
+    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+    if Render == 1:
+        if (os.path.isfile(RenderDir + "/" + Filename) == 0) or (Overwrite == 1):
+            print("Now rendering: " + Filename + " . . .\n")
+            bpy.context.scene.render.filepath = RenderDir + "/" + Filename
+            bpy.ops.render.render(write_still=True, use_viewport=True)
+        elif (os.path.isfile(RenderDir + "/" + Filename) == 1) and (Overwrite == 0):
+            print("File " + Filename + " already exists. Skipping . . .\n")
 
 def HeadLookAt(El, Az):
     Rad = 1
@@ -44,7 +54,8 @@ def GetEyeLocations():                        #=============== Get current eye l
     return EyeLocations
 
 
-
+Render              = 1
+Overwrite           = 0
 SetupGeometry       = 7                         # Specify which physical setup stimuli will be presented in
 StereoFormat        = 0
 InitBlendScene(SetupGeometry, StereoFormat, 57)
@@ -61,12 +72,17 @@ MaxHeadAz       = 30                                                        # Az
 Distances       = [0]                                                       # Set object distance from origin (centimeters)
 Scales          = [1]                                                                   # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                                 # Set relative length of fur (0-1)
-ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn"]
-ExpNo           = [0, 1, 2, 3, 4]                                                       # Which expressions to render
-ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]])
-ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5]])
+ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn","Tongue"]
+ExpNo           = [2]                                                          # Which expressions to render
+ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1],[0,0.25,0.2,0]])
+ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5],[0,0,0,0]])
 mexp            = 0
-ExpMagnitudes   = [0.25, 0.5, 0.75, 1.0]
+ExpMagnitudes   = [0.25, 0.5, 0.75]
+TongueStartPos  = [0.002345, 0.008, -0.042]
+TongueEndPos    = [0, -0.012, -0.049]
+TonguePosDiff   = np.diff(np.array([TongueStartPos, TongueEndPos]),axis=0)
+TongueStartRot  = ((math.radians(-1.15), 0, 0))
+TongueRotDiff   = ((math.radians(6.15), 0, 0))
 
 ShowBody            = 1;                                # Render body?
 InfiniteVergence    = 0;                                # Fixate (vergence) at infinity? 0 = camera distance
@@ -99,7 +115,7 @@ if ShowBody == 0:
 
 
 #========================== Begin rendering loop
-for cond in [0,1]:
+for cond in [0]:
     if cond == 1:
         bpy.context.scene.cycles.samples        = 1
         Scene.render.image_settings.file_format = 'HDR'
@@ -112,16 +128,21 @@ for cond in [0,1]:
             #======= Set primary expression
             #bpy.ops.object.mode_set(mode='POSE')
             head.pose.bones['yawn'].location    = mu.Vector((0,0,0.02*ExpWeights[exp,3]*ExpMag))               # Wide mouthed 'yawn' expression
-            head.pose.bones['Kiss'].location    = mu.Vector((0,0.02*ExpWeights[exp,2]*ExpMag,0))               # Pursed lip 'coo' expression
+            head.pose.bones['Kiss'].location    = mu.Vector((0,0.04*ExpWeights[exp,2]*ExpMag,0))               # Pursed lip 'coo' expression
             head.pose.bones['jaw'].location     = mu.Vector((0,0,0.02*ExpWeights[exp,1]*ExpMag))               # Open-mouthed 'threat' expression
             head.pose.bones['Fear'].location    = mu.Vector((0,-0.02*ExpWeights[exp,0]*ExpMag,0))              # Bared-teeth 'fear' grimace
 
             #======= Set micro expression
-            head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]*ExpMag))       # Close eye lids (blink)
-            head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1]*ExpMag,0))        # Retract ears
-            head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]*ExpMag))       # Raise brow
-            head.pose.bones['EyesTracker'].scale = mu.Vector((0, 0.2+0.8*ExpMicroWeights[mexp, 3]*ExpMag, 0))  # Pupil dilation/ constriction
-
+            head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))       # Close eye lids (blink)
+            head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))        # Retract ears
+            head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))       # Raise brow
+            head.pose.bones['EyesTracker'].scale = mu.Vector((0, 0.2+0.8*ExpMicroWeights[mexp, 3], 0))  # Pupil dilation/ constriction
+            
+            #======= Set tongue position
+            if ExpStr[exp] == 'Tongue':  
+                bpy.data.objects['Tongue_1'].location           = mu.Vector((TongueStartPos[0]+TonguePosDiff[0][0]*ExpMag, TongueStartPos[1]+TonguePosDiff[0][1]*ExpMag, TongueStartPos[2]+TonguePosDiff[0][2]*ExpMag))     
+                bpy.data.objects['Tongue_1'].rotation_euler     = mu.Vector((TongueStartRot[0]+TongueRotDiff[0]*ExpMag, TongueStartRot[1]+TongueRotDiff[1]*ExpMag, TongueStartRot[2]+TongueRotDiff[2]*ExpMag))
+                bpy.data.objects['Tongue_1'].scale              = mu.Vector((0.12, 0.12-0.01*ExpMag, 0.12+0.03*ExpMag))
             
             for d in Distances:
                 body.location = mu.Vector((OrigBodyLoc[0], OrigBodyLoc[1]+d/100, OrigBodyLoc[2]))
@@ -177,9 +198,7 @@ for cond in [0,1]:
                                     Filename = "MF3D_%s%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (ExpStr[exp], ExpMag, Haz, -Hel, Gaz, Gel)
                                 elif cond == 1:
                                     Filename = "MF3D_%s%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (ExpStr[exp], ExpMag, Haz, -Hel, Gaz, Gel)
-                                print("Now rendering: " + Filename + " . . .\n")
-                                bpy.context.scene.render.filepath = RenderDir + "/" + Filename
-                                bpy.ops.render.render(write_still=True, use_viewport=True)
+                                RenderFrame(Filename, RenderDir, Render, Overwrite)
 
 print("Rendering completed!\n")
 

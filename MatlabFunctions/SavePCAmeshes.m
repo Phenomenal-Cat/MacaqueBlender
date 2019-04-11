@@ -24,7 +24,7 @@ end
 	%OriginalMeshFile    = fullfile(Prefix, '/projects/murphya/MorphBlender/BaseMesh_50K_openmouth.obj');
     %OutputDir           = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/PCAmeshes_2018_v2');
     PCAmatfile          = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/AllMeshPCA_N=23.mat');
-    OriginalMeshFile    = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/AverageMesh_N=23.obj');
+    OriginalMeshFile    = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/BaseMeshes/BaseMesh_50K_openmouth.obj');
     OutputDir           = fullfile(Prefix, 'Seagate Backup 1/NIH_Postdoc/MF3D database/PCA_N=23/');
 % end
 load(PCAmatfile);
@@ -50,20 +50,16 @@ SpecCol         = 1;                          	% Specular light color
 
 %% =================== Plot PCA statistics
 fh(1) = figure;
-plot(pca_vertex.exp(1:max_pc), 'o-b');
+yyaxis left
+bar(pca_vertex.exp(1:max_pc));
 title('PCA Explained variance', 'fontsize', 18);
 xlabel('Principal component', 'fontsize', 18);
 ylabel('Variance explained (%)', 'fontsize', 18);
-set(gca,'fontsize',16,'xtick',1:max_pc,'xlim',[1,max_pc]);
 grid on;   
-
-fh(2) = figure; 
-plot(0:max_pc, [0; cumsum(pca_vertex.exp(1:max_pc))], 'o-b')
-grid on
-title('PCA Cumulative explained variance', 'fontsize', 18);
-xlabel('Principal component', 'fontsize', 18);
+yyaxis right;
+plot(0:max_pc, [0; cumsum(pca_vertex.exp(1:max_pc))], 'o-r', 'linewidth',2)
 ylabel('Cumulative variance explained (%)', 'fontsize', 18);
-set(gca,'fontsize',16,'xtick',0:1:max_pc)
+set(gca,'fontsize',16,'xtick',1:max_pc,'xlim',[0.5,max_pc+0.5],'tickdir','out');
 
 fh(3) = figure;
 sch = scatter3(pca_vertex.score(:,1),pca_vertex.score(:,2),pca_vertex.score(:,3), 'filled');
@@ -98,11 +94,30 @@ set(gca,'clim',[0.2, 1.2]);
 
 fh(4) = figure;
 histogram(PCdist, 'BinEdges',0:0.1:1.4)
+x_values = 0:0.1:1.4;
+pd  = fitdist(PCdist,'Normal');
+y   = pdf(pd,x_values);
+hold on;
+plot(x_values, y, '-r', 'linewidth',2);
 grid on
 box off
 set(gca, 'fontsize', 16, 'xlim', [0, 1.4], 'tickdir', 'out');
 xlabel('Euclidean distance from mean (SD)', 'fontsize', 18);
 ylabel('Number of identities', 'fontsize', 18);
+
+fh(5) = figure;
+Indx23    = [1:21,24,25];
+AllVols = [MeshData.VoxelVol];
+sh = scatter(AllVols(Indx23), PCdist', 'filled');
+hold on;
+[R,P] = corrcoef(AllVols(Indx23), PCdist');
+
+grid on
+box off
+xlabel('Voxel volume (mm^3)', 'fontsize', 14);
+ylabel('Euclidean distance from mean (sd)', 'fontsize', 14);
+set(gca,'tickdir','out');
+
 
 % print(hf,'-depsc2',[directory_obj prefix_pcatype '_exp.eps']);
 % close(hf);
@@ -139,6 +154,7 @@ for pc = 1:max_pc                                                       % For ea
 %         end
         
         if SavePCA == 1
+            pc_vertex = pc_vertex(:,[1,3,2]);   % Re-order Y and Z axes
             write_quadobj(fullfile(OutputDir, name_new), pc_vertex, FV.faces, obj{1}.texcoords');
             
         elseif SavePCA == 2

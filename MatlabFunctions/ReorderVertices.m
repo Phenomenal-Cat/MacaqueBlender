@@ -6,6 +6,8 @@
 addpath('/Volumes/PROJECTS/murphya/Matlab Code/APMSubfunctions')
 addpath(genpath('/Volumes/PROJECTS/murphya/Matlab Code/APMSubfunctions/3D_rendering'))
 addpath(genpath('/Volumes/PROJECTS/murphya/MacaqueFace3D/MacaqueBlender'))
+
+
 MeshDir     = '/Volumes/Seagate Backup 1/NIH_Postdoc/MF3D database/CT_7_EditedMeshes';
 OutputDir   = '/Volumes/Seagate Backup 1/NIH_Postdoc/MF3D database/CT_8_ReorderedMeshes';
 MeshFiles   = wildcardsearch(MeshDir, 'M*_02.obj');

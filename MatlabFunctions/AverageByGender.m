@@ -9,9 +9,14 @@
 if ismac, Prefix = '/Volumes'; else Prefix = []; end
 
 %================ LOAD ORIGINAL MESHES
+MeshDataFile = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/Matlab/MeshData.mat');
+load(MeshDataFile);
+Sex     = {MeshData.Sex};
+Age     = {MeshData.Age};
+
 MeshDir     = fullfile(Prefix, '/procdata/murphya/CT/Edited Ent/');
 MeshFiles   = sort_nat(wildcardsearch(MeshDir, 'M*_01.obj'));
-Sex         = {'F','M','M','M','M','F','F','M','M','M','F','M','M','M','M','M','F','F','F','M','M','?','?','?','?','?','?','M','M'};
+%Sex         = {'F','M','M','M','M','F','F','M','M','M','F','M','M','M','M','M','F','F','F','M','M','?','?','?','?','?','?','M','M'};
 Sexes       = {'M','F'};
 Scale       = 0;
 Sex         = Sex(1:numel(MeshFiles));
@@ -19,7 +24,7 @@ Sex         = Sex(1:numel(MeshFiles));
 h = waitbar(0, '');
 for s = 1:numel(Sexes)
     Index = find(~cellfun(@isempty, strfind(Sex, Sexes{s})));
-	for M = 1:numel(Index)
+    for M = 1:numel(Index)
         waitbar(M/numel(Index), h, sprintf('Loading %s mesh %d of %d...', Sexes{s}, M, numel(Index)));
         obj                         = LoadOBJFile(MeshFiles{Index(M)});
         Obj(s).AllVerts(M, :, :)    = obj{1}.vertices;
@@ -27,6 +32,7 @@ for s = 1:numel(Sexes)
     end
 end
 delete(h);
+
 
 %================ CACLULATE NEW MESHES
 MeanMeshes{2} = squeeze(mean(Obj(1).AllVerts))';
@@ -96,7 +102,7 @@ Link = linkprop(axh, {'CameraUpVector','CameraPosition','CameraTarget'});
 
 %% ================= Save new meshes to obj files
 %export_fig('GenderFaceWarp_3D.png','-png','-m2','-transparent','-nocrop');
-GenderDir       = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/GenderMorph2');
+GenderDir       = fullfile(Prefix, '/projects/murphya/MacaqueFace3D/MeshMorphing/GenderMorph3');
 Scaling         = {'Unscaled','Scaled'}; 
 BaseMeshFile    = fullfile(Prefix, '/procdata/murphya/CT/Wrapped_meshes/M02_BaseMesh50K.obj'); 	% Full path of the original textured mesh at 50K polygon resolution (M02)
 BaseMesh        = LoadOBJFile(BaseMeshFile);                                                    % Read the original mesh in so we can copy the UV texture coordinates
