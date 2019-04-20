@@ -193,14 +193,42 @@ switch Indx2
     case 5 %============ Interpolate timecourse
         Fig.ParamInterp(Indx1) = get(hObj, 'value');
         if Fig.ParamInterp(Indx1) == 1
-            Fig.ParamInterp(Indx1)
+            Fig.ParamInterp(Indx1) = InterpTimecourse(TC);
+            set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).Timecourse);
         elseif Fig.ParamInterp(Indx1) == 0
-            
+            set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).Timecourse);
         end
 end
     
 end
 
+%===================== Interpolate missing data
+function [TCinterp] = InterpTimecourse(TC)
+
+TCinterp    = TC;
+MissingData = numel(find(isnan(TC)));
+if MissingData > 0
+    fprintf('Data is missing for %d data points! Interpolating data...\n', MissingData);
+	AvailableFrames = find(~isnan(TC));
+    if isempty(AvailableFrames)
+        fprintf('No data has been entered - interpolation is not possible!\n');
+    elseif ~isempty(AvailableFrames)                                
+        if isnan(TC(1))                                                 % First frame is missing...
+            FrameIndx          	= 1:(AvailableFrames(1)-1);             % Find all missing frames from start
+            TCinterp(FrameIndx)	= TC(AvailableFrames(1));               % Back-fill with data from first available frame
+        end
+        if isnan(TC(end))                                               % Last frame is missing
+            FrameIndx           = (AvailableFrames(end)+1):numel(TC); 	% Find all missing frames to end
+            TCinterp(FrameIndx) = TC(AvailableFrames(end));             % Fill with data from last available frame
+        end
+        AvailableFrames = find(~isnan(TCinterp));
+        TCinterp = interp1(AvailableFrames, TCinterp(AvailableFrames), 1:numel(TCinterp), 'spline');
+    end
+else
+    fprintf('All data points are present! Skipping interpolation\n');
+end
+
+end
 
 %================== Load parameters from file (.mat or .csv)
 function LoadParams

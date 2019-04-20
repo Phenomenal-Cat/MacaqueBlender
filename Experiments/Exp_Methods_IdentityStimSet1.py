@@ -206,8 +206,8 @@ for cond in [0]:
                                             Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
                                         else:
                                             Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
-                                    if (pcA != pcB): # <<<<< TEMPORARY
-                                        RenderFrame(Filename, RenderDir, Render, Overwrite)
+                                    #if (pcA != pcB): # <<<<< TEMPORARY
+                                    RenderFrame(Filename, RenderDir, Render, Overwrite)
 
 print("Rendering completed!\n")
 

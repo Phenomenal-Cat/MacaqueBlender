@@ -72,12 +72,12 @@ MaxHeadAz       = 30                                                        # Az
 Distances       = [0]                                                       # Set object distance from origin (centimeters)
 Scales          = [1]                                                                   # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                                 # Set relative length of fur (0-1)
-ExpStr          = ["Neutral","Fear","Threat","Coo","Yawn","Tongue"]
-ExpNo           = [2]                                                          # Which expressions to render
+ExpStr          = ["Neutral_R","Fear","Threat","Coo","Yawn","Tongue"]
+ExpNo           = [0]                                                          # Which expressions to render
 ExpWeights      = np.matrix([[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1],[0,0.25,0.2,0]])
 ExpMicroWeights = np.matrix([[0,0,0,0.5],[1,0,0,0.5],[0,1,0,0.5],[0,0,1,0.5],[0,0,0,0]])
 mexp            = 0
-ExpMagnitudes   = [0.25, 0.5, 0.75]
+ExpMagnitudes   = [1]
 TongueStartPos  = [0.002345, 0.008, -0.042]
 TongueEndPos    = [0, -0.012, -0.049]
 TonguePosDiff   = np.diff(np.array([TongueStartPos, TongueEndPos]),axis=0)
