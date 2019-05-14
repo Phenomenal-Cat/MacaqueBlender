@@ -61,7 +61,7 @@ SetupGeometry       = 7                         # Specify which physical setup s
 StereoFormat        = 0
 InitBlendScene(SetupGeometry, StereoFormat, 57)
 [Prefix, temp]      = GetOSpath()
-RenderDir           = Prefix + 'murphya/MacaqueFace3D/Methods Manuscript/StimSet1/Identities'
+RenderDir           = Prefix + 'murphya/MacaqueFace3D/Methods Manuscript/MF3D_R1/MF3D_Identities/'
 
 
 #============ Set rendering parameters						
@@ -72,6 +72,7 @@ HeadAzAngles    = range(-90, 100, 30)
 MaxHeadAz       = 30                                                        # Azimuth angle after which head rotation stops and body rotation begins
 PClevels        = [-4,-3,-2,-1,1,2,3,4]
 PCcombos        = [0,1,2,3,4]
+PCangles        = [22.5, 67.5]                                              # Set angles of trajectories within 2D PCA space (degrees)
 Distances       = [0]                                                       # Set object distance from origin (centimeters)
 Scales          = [1]                                                                   # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                                 # Set relative length of fur (0-1)
@@ -112,7 +113,9 @@ for cond in [0]:
     if cond == 1:
         bpy.context.scene.cycles.samples        = 1
         Scene.render.image_settings.file_format = 'HDR'
-        RenderDir = RenderDir + "/LabelMaps"
+        RenderDir = RenderDir + "LabelMaps"
+    else:
+        RenderDir = RenderDir + "ColorImages"
         
     for pcA in PCcombos:
         for pcB in PCcombos:
@@ -125,89 +128,105 @@ for cond in [0]:
             
             #=========== For each 'distinctiveness' level (i.e. Euclidean distance from mean)
             for pcl in PClevels:
-                
-                if pcA != pcB:
-                    pclsign     = pcl/abs(pcl)
-                    pcl2        = np.sqrt(np.square(pcl)/2)*pclsign
-                else:
-                    pcl2 = pcl
-                print(pcl2)
-                
-                #=========== Set PC shape key values
-                for pc in range(0, 10):
+                for pcang in PCangles:
                     
-                    if pcA == pc:
-                        head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pcl2
+                    if pcA != pcB:
+                        pclsign     = pcl/abs(pcl)
+                        pclA        = np.sin(np.radians(pcang))*pcl
+                        pclB        = np.cos(np.radians(pcang))*pcl
+                        
+                        #pcl2        = np.sqrt(np.square(pcl)/2)*pclsign
                     else:
-                        head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
-                    if pcB == pc:
-                        head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pcl2*pcbdir 
-                    else:
-                        head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
-            
-                for d in Distances:
-                    body.location = mu.Vector((OrigBodyLoc[0], OrigBodyLoc[1]+d/100, OrigBodyLoc[2]))
+                        #pcl2 = pcl
+                        pclA = pcl
+                        pclB = pcl
+                        
+                    print(pclA)
+                    print(pclB)
                     
-                    #=========== Rotate head
-                    for Hel in HeadElAngles:
-                        for Haz in HeadAzAngles:
-                            
-                            #=========== Rotate body
-                            if RotateBody == 1:
-                                if abs(Haz) > 0:
-                                    if abs(Haz) > MaxHeadAz:
-                                        Baz     = (abs(Haz) - MaxHeadAz)*Haz/abs(Haz)
+                    #=========== Set PC shape key values
+                    for pc in range(0, 10):
+                        
+                        if pcA == pc:
+                            head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pclA 
+                        else:
+                            head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
+                        if pcB == pc:
+                            head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pclB*pcbdir 
+                        else:
+                            head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
+                
+                    for d in Distances:
+                        body.location = mu.Vector((OrigBodyLoc[0], OrigBodyLoc[1]+d/100, OrigBodyLoc[2]))
+                        
+                        #=========== Rotate head
+                        for Hel in HeadElAngles:
+                            for Haz in HeadAzAngles:
+                                
+                                #=========== Rotate body
+                                if RotateBody == 1:
+                                    if abs(Haz) > 0:
+                                        if abs(Haz) > MaxHeadAz:
+                                            Baz     = (abs(Haz) - MaxHeadAz)*Haz/abs(Haz)
+                                        else:
+                                            Baz = 0
                                     else:
                                         Baz = 0
-                                else:
-                                    Baz = 0
+                                        
+                                    body.rotation_euler = (0, 0, math.radians(Baz))
                                     
-                                body.rotation_euler = (0, 0, math.radians(Baz))
+                                    Haz2    = Haz-Baz
+                                    print("Head azimuth angle = %d, Body azimuth angle = %d" % (Haz2, Baz))
+                                    HeadXYZ = HeadLookAt(Hel, Haz2)
+                                    headrig.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+                                    
+                                elif RotateBody ==0:
+                                    HeadXYZ = HeadLookAt(Hel, Haz)
+                                    headrig.pose.bones['HeadTracker'].location = HeadXYZ + head.location
                                 
-                                Haz2    = Haz-Baz
-                                print("Head azimuth angle = %d, Body azimuth angle = %d" % (Haz2, Baz))
-                                HeadXYZ = HeadLookAt(Hel, Haz2)
-                                headrig.pose.bones['HeadTracker'].location = HeadXYZ + head.location
                                 
-                            elif RotateBody ==0:
-                                HeadXYZ = HeadLookAt(Hel, Haz)
-                                headrig.pose.bones['HeadTracker'].location = HeadXYZ + head.location
-                            
-                            
-                            for Gel in GazeElAngles:
-                                for Gaz in GazeAzAngles:
+                                for Gel in GazeElAngles:
+                                    for Gaz in GazeAzAngles:
 
-                                    #=========== Rotate gaze
-            #                                EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
-            #                                if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
-            #                                    if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
-            #                                        CamLocation = bpy.data.scenes["Scene"].camera.location
-            #                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
-            #                                        
-            #                                    elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
-            #                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
-            #                                        
-            #                                elif GazeAtCamera == 0:    
-            #                                    GazeXYZ = GazeLookAt(Gel, Gaz)
-            #                                    #print("Gaze coordinates =({}, {}, {});".format(*GazeXYZ))
-            #                                    head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, 0.26, 0))
+                                        #=========== Rotate gaze
+                #                                EyeLocations = GetEyeLocations()                                            # Get current world coordinates for eye objects
+                #                                if GazeAtCamera == 1:                                                       # Gaze in direction of camera?
+                #                                    if InfiniteVergence == 0:                                               # Gaze converges at camera distance?
+                #                                        CamLocation = bpy.data.scenes["Scene"].camera.location
+                #                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 0.9))
+                #                                        
+                #                                    elif InfiniteVergence == 1:                                             # Gaze converges at (approximately) infinity?
+                #                                        head.pose.bones['EyesTracker'].location = mu.Vector((0, 0.1, 10))
+                #                                        
+                #                                elif GazeAtCamera == 0:    
+                #                                    GazeXYZ = GazeLookAt(Gel, Gaz
+                
+                #                                    #print("Gaze coordinates =({}, {}, {});".format(*GazeXYZ))
+                #                                    head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, 0.26, 0))
 
 
-                                    #============ Update render and save
-                                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                                    if cond == 0:
-                                        if pcA == pcB:
-                                            Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
-                                        else:
-                                            Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
-                                            
-                                    elif cond == 1:
-                                        if pcA == pcB:
-                                            Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
-                                        else:
-                                            Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
-                                    #if (pcA != pcB): # <<<<< TEMPORARY
-                                    RenderFrame(Filename, RenderDir, Render, Overwrite)
+                                        #============ Update render and save
+                                        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                                        if cond == 0:
+                                            if pcA == pcB:
+                                                Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
+                                            else:
+                                                if pcang==90:
+                                                    Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
+                                                else:
+                                                    Filename = "MF3D_PC%d+PC%d_(%.2fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                               
+                                        elif cond == 1:
+                                            if pcA == pcB:
+                                                Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
+                                            else:
+                                                if pcang==90:
+                                                    Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
+                                                else:
+                                                    Filename = "MF3D_PC%d+PC%d_(%.2fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                                    
+                                        if (pcA != pcB): # <<< Use if all single PC renders are complete
+                                            RenderFrame(Filename, RenderDir, Render, Overwrite)
 
 print("Rendering completed!\n")
 

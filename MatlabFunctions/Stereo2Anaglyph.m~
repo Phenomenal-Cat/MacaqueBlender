@@ -29,10 +29,11 @@ for f = 1:numel(InputFiles)
     [im,c,alpha] = imread(InputFiles{f});
     ImSize      = size(im);
     HalfSize    = ImSize/2;
-    if InputStereFormat <= 2                % Side-by-side stereo image input
+    if InputStereFormat == 1
+    elseif InputStereFormat >= 2                % Side-by-side stereo image input
         imgL    = im(:,1:HalfSize(2),:);
         imgR    = im(:,(HalfSize(2)+1):end,:);
-        if InputStereFormat == 2            	% Side-by-side squeezed frame format
+        if InputStereFormat == 2            % Side-by-side squeezed frame format
             imgL = imresize(imgL, ImSize([1,2]));
             imgR = imresize(imgR, ImSize([1,2]));
         end
