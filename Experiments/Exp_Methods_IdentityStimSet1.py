@@ -149,9 +149,7 @@ for cond in [0]:
                         
                         if pcA == pc:
                             head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pclA 
-                        else:
-                            head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
-                        if pcB == pc:
+                        elif pcB == pc:
                             head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = (1/3)*pclB*pcbdir 
                         else:
                             head.data.shape_keys.key_blocks["PCA_N=23__shape_PC%d_sd3" % (pc+1)].value = 0
@@ -214,7 +212,7 @@ for cond in [0]:
                                                 if pcang==90:
                                                     Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
                                                 else:
-                                                    Filename = "MF3D_PC%d+PC%d_(%.2fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d+PC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
                                                
                                         elif cond == 1:
                                             if pcA == pcB:
@@ -223,7 +221,7 @@ for cond in [0]:
                                                 if pcang==90:
                                                     Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
                                                 else:
-                                                    Filename = "MF3D_PC%d+PC%d_(%.2fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d+PC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
                                                     
                                         if (pcA != pcB): # <<< Use if all single PC renders are complete
                                             RenderFrame(Filename, RenderDir, Render, Overwrite)
