@@ -72,10 +72,11 @@ HeadAzAngles    = range(-90, 100, 30)
 MaxHeadAz       = 30                                                        # Azimuth angle after which head rotation stops and body rotation begins
 PClevels        = [-4,-3,-2,-1,1,2,3,4]
 PCcombos        = [0,1,2,3,4]
-PCangles        = [22.5, 67.5]                                              # Set angles of trajectories within 2D PCA space (degrees)
+PCangles        = [45]#[22.5, 45, 67.5]                                          # Set angles of trajectories within 2D PCA space (degrees)
 Distances       = [0]                                                       # Set object distance from origin (centimeters)
 Scales          = [1]                                                                   # Physical scale of object (proportion)
 FurLengths      = [0.7]                                                                 # Set relative length of fur (0-1)
+MinusPlus       = ['-','','+']
 
 ShowBody            = 1;                                # Render body?
 InfiniteVergence    = 0;                                # Fixate (vergence) at infinity? 0 = camera distance
@@ -134,15 +135,10 @@ for cond in [0]:
                         pclsign     = pcl/abs(pcl)
                         pclA        = np.sin(np.radians(pcang))*pcl
                         pclB        = np.cos(np.radians(pcang))*pcl
-                        
-                        #pcl2        = np.sqrt(np.square(pcl)/2)*pclsign
                     else:
-                        #pcl2 = pcl
                         pclA = pcl
-                        pclB = pcl
+                        pclB = 0
                         
-                    print(pclA)
-                    print(pclB)
                     
                     #=========== Set PC shape key values
                     for pc in range(0, 10):
@@ -210,21 +206,21 @@ for cond in [0]:
                                                 Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
                                             else:
                                                 if pcang==90:
-                                                    Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d%sPC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, MinusPlus[pcbdir+1], pcB+1, pcl, Haz, -Hel, Gaz, Gel)
                                                 else:
-                                                    Filename = "MF3D_PC%d+PC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d%sPC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_RGBA.png" % (pcA+1, MinusPlus[pcbdir+1], pcB+1, pcang, pcl, Haz, -Hel, Gaz, Gel)
                                                
                                         elif cond == 1:
                                             if pcA == pcB:
                                                 Filename = "MF3D_PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcl, Haz, -Hel, Gaz, Gel)
                                             else:
                                                 if pcang==90:
-                                                    Filename = "MF3D_PC%d+PC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d%sPC%d=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, MinusPlus[pcbdir+1], pcB+1, pcl, Haz, -Hel, Gaz, Gel)
                                                 else:
-                                                    Filename = "MF3D_PC%d+PC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, pcbdir*(pcB+1), pcang, pcl, Haz, -Hel, Gaz, Gel)
+                                                    Filename = "MF3D_PC%d%sPC%d_(%.1fdeg)=%.2f_Haz%d_Hel%d_Gaz%d_Gel%d_Label.hdr" % (pcA+1, MinusPlus[pcbdir+1], pcB+1, pcang, pcl, Haz, -Hel, Gaz, Gel)
                                                     
-                                        if (pcA != pcB): # <<< Use if all single PC renders are complete
-                                            RenderFrame(Filename, RenderDir, Render, Overwrite)
+                                        #if (pcA != pcB): # <<< Use if all single PC renders are complete
+                                        RenderFrame(Filename, RenderDir, Render, Overwrite)
 
 print("Rendering completed!\n")
 
