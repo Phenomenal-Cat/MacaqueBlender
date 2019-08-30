@@ -34,11 +34,14 @@ function [RDSFile, Display] = Zmap2RDS(ZmapFile, RDSFile, ScaleDepth, Display)
 if nargin == 0
     %ZmapFile  	= '/Volumes/Seagate Backup 1/NIH_Postdoc/DisparitySelectivity/Stim10K3D/Renders/DepthMaps/Macaque_Zmap_neutral_az0_el0_dist0_sc12.hdr';
     ZmapFile  	= '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=100cm/DepthMaps/Macaque_Neutral_Haz0_Scale0.80_frame001.hdr';
-    
+    OutputDir   = '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=100cm/RDS/';
 end
-OutputDir   = '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=100cm/RDS/';
 if nargin < 2
     ScaleDepth  = 1;
+end
+if ~exist('Display','var')
+    Display.ScreenID 	= 0;
+    Display.Stereomode  = 4;
 end
 
 %============== LOAD DEPTH MAP
@@ -64,7 +67,7 @@ if iscell(ZmapFile) || ischar(ZmapFile)
 elseif isnumeric(ZmapFile)
     DepthMap = ZmapFile;
 end
-if ~exist('RDSFile','var') || isempty(RDSFile)
+if ~exist('RDSFile','var')
     [~,filename] = fileparts(ZmapFile);
     RDSFile = fullfile(OutputDir, sprintf('RDS_%s_scale%d.png',filename, ScaleDepth*100));
 end
@@ -73,15 +76,13 @@ if exist('Display','var')
     if isempty(Display)
         clear Display;
     end
-elseif ~exist('Display','var')
-    LeavePTBopen        = 1;
-    Display.ScreenID 	= 0;
-    Display.Stereomode  = 0;
+elseif ~ exist('Display','var')
+    LeavePTBopen = 0;
 end
 
 %============== SET PARAMETERS
 InvertDepth = ScaleDepth/abs(ScaleDepth);       
-PlotData    = 0;
+PlotData    = 1;
 IPD         = 3.5;                                      % Interpupillary distance of subject (cm)
 VD          = 100;                                       % Viewing distance of subject (cm)
 SaveAlpha   = 0;
@@ -104,7 +105,6 @@ OututFormat     = 'SBSsq';                              % 'SBS' = side-by-side; 
 %         EyeOffset   = [0, Display.XScreenRect(3)/2];
 %     case 'SBS' 
         EyeOffset   = [0, size(DepthMap,2)];
-
 % end
 if SaveAlpha == 0
     BackgroundRGB = [127,127,127];
@@ -136,9 +136,8 @@ if ~exist('Display','var')
     Display = DisplaySettings(1);
     Screen('Preference', 'SkipSyncTests', 1);
 end
-
-
-Display.Rect = [0,0,1920,1080].*[1,1,4,2];
+   
+Display.Rect = [0,0,1920,1080].*[1,1,2,2];
 % if any(Display.Rect([3,4])/2 ~= DisplayRes)
 %     fprintf('Resizing depth map (%d x %d) to fit screen resolution (%d x %d)...\n', DisplayRes, Display.Rect([3,4]));
 %     DepthMap    = imresize(DepthMap, Display.Rect([4,3]));
@@ -154,7 +153,7 @@ Display.Rect = [0,0,1920,1080].*[1,1,4,2];
 
 %============== GENERATE DOT POSITIONS
 DotArea     = pi*(DotDiam/2)^2;
-NoDots      = round(((MapLims(1)*MapLims(2))/DotArea)*DotDensity);                  % Calculate number of dots
+NoDots      = round(((MapLims(1)*MapLims(2))/10/DotArea)*DotDensity);                  % Calculate number of dots
 Xpos        = round(rand([NoDots,1])*(MapLims(2)-1)+1);                          	% Generate random pixel indices for each dot
 Ypos        = round(rand([NoDots,1])*(MapLims(1)-1)+1);                          	% Generate random pixel indices for each dot
 for n = 1:NoDots                                                                    % For each dot...
@@ -195,23 +194,19 @@ end
 %Tex = Screen('MakeTexture', Display.win,  repmat(BackgroundRGB(1), size(Display.Rect([3,4]))));
 Screen('FillRect', Display.win, BackgroundRGB, []);
 for eye = 1:2
-    %currentbuffer = Screen('SelectStereoDrawBuffer', Display.win, eye-1); 
+    currentbuffer = Screen('SelectStereoDrawBuffer', Display.win, eye-1); 
     Screen('DrawDots', Display.win, [XposDisp{eye}+EyeOffset(eye); Ypos'], DotDiam, DotColors', [], DotType);
 end
 [VBL StimOn]    = Screen('Flip', Display.win);
-RDScapture      = Screen('GetImage', Display.win);%, Display.Rect);
-WaitSecs(0.1);
+RDScapture      = Screen('GetImage', Display.win, Display.Rect);
+WaitSecs(0.5);
 if SaveAlpha == 1
     BackgroundPix   = RDScapture(:,:,1) == BackgroundRGB(1) & RDScapture(:,:,2) == BackgroundRGB(2) & RDScapture(:,:,3) == BackgroundRGB(3);
     AlphaChannel    = 255*(ones(size(BackgroundPix)) - BackgroundPix);
 end
 if strcmpi(OututFormat,'SBSsq')
-%     figure; image(RDScapture); axis equal tight;
-%     Display.Rect
-%     Display.rect
-%     size(RDScapture)
-%     RDScapture = imresize(RDScapture, [size(RDScapture,1), size(RDScapture,2)/2]);
-    RDScapture = imresize(RDScapture, [Display.Rect(4), Display.Rect(3)/2]);
+    figure; image(RDScapture); axis equal
+    RDScapture = imresize(RDScapture, [size(RDScapture,1), size(RDScapture,2)/2]);
 end
 if SaveAlpha == 0
 	imwrite(RDScapture, RDSFile);
@@ -225,3 +220,4 @@ end
 if LeavePTBopen == 0
     sca;
 end
+sca;

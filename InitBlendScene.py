@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=7, StereoFormat=1, ViewingDistance=80):
+def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=100):
  
     #============ Set viewing geometry
     HemiProjection          = 0

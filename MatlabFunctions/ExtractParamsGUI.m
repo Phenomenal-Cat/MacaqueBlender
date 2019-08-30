@@ -10,26 +10,29 @@ function ExtractParamsGUI
 
 global Mov Fig video audio Params
 
-LoadMovieClip;      % User selects movie clip to load
-
 %============== Set UI control pannels
 Fig.MaxFrames                   = 30;
 Fig.Controls.VocalTypes        	= {'Non-vocal','Vocal'};
 Fig.Controls.VocalType         	= 1;
 Fig.Controls.ExpressionTypes   	= {'Fear grimace','Open mouth threat','Yawn','Lip-smack','Coo','Tongue protrusion'};
 Fig.Controls.ExpressionType    	= 4;
-Fig.Controls.Labels             = {'Motion type','Expression','Display frames'};
-Fig.Panel1.Strings              = {Fig.Controls.VocalTypes, Fig.Controls.ExpressionType, ''};
-Fig.Panel1.Values               = [Fig.Controls.VocalType, Fig.Controls.ExpressionType, Fig.MaxFrames];
+Fig.Controls.UseAudio          	= 0;
+Fig.Controls.Labels             = {'Vocalization','Expression type','Frames to display','Smoothing kernel'};
+Fig.Panel1.Values               = [Fig.Controls.VocalType, Fig.Controls.ExpressionType, Fig.MaxFrames, 1];
+Fig.Panel1.Types                = {'popupmenu','popupmenu','edit','edit'};
+
+LoadMovieClip;      % User selects movie clip to load
 
 
 %============== Check audio
-SampleTimes     = linspace(0, size(audio.data,1)/audio.rate, size(audio.data,1));
-VolumeThresh    = 0.05;
-VocalOnsetSmp   = find(audio.data(:,1) > VolumeThresh, 1);
-VocalOffsetSmp  = find(audio.data(:,1) > VolumeThresh, 1, 'last');
-VocalOnsetTime  = SampleTimes(VocalOnsetSmp);
-VocalOffsetTime = SampleTimes(VocalOffsetSmp);
+if Fig.Controls.UseAudio == 1
+    SampleTimes     = linspace(0, size(audio.data,1)/audio.rate, size(audio.data,1));
+    VolumeThresh    = 0.05;
+    VocalOnsetSmp   = find(audio.data(:,1) > VolumeThresh, 1);
+    VocalOffsetSmp  = find(audio.data(:,1) > VolumeThresh, 1, 'last');
+    VocalOnsetTime  = SampleTimes(VocalOnsetSmp);
+    VocalOffsetTime = SampleTimes(VocalOffsetSmp);
+end
 
 
 ParamNames  = {'Jaw opening','Expression amount','Ear flap','Brow raise', 'Blink', 'Head Elevation'};
@@ -39,8 +42,9 @@ for n = 1:numel(ParamNames)
     Params(n).Timecourse    = nan(1, Mov.NoFrames);
     StartPos = [(video.width/2)-50,(video.width/2)+50, (video.height/2)-(10*n),(video.height/2)-(10*n)]';
     Params(n).LinePoints    = repmat(StartPos,[1, Mov.NoFrames]);
+    Params(n).FilterWidth   = 7;
 end
-
+Fig.Panel1.Strings 	= {Fig.Controls.VocalTypes, Fig.Controls.ExpressionTypes, num2str(Fig.MaxFrames), num2str(Params(1).FilterWidth)};
 
 %================== Open figure
 ScreenRes   = get(0,'screensize');
@@ -51,32 +55,44 @@ axis equal tight off
 Fig.fn      = title(sprintf('%s', strrep(Mov.Filename,'_',' ')),'fontsize',14);
 Fig.th      = text(10,10,sprintf('Frame %d', 1),'color',[1 1 1],'fontsize', 16);
 
-Fig.Panel1.H    = uipanel('parent',Fig.fh, 'units','normalized','position', [0.1, 0.2, 0.4, 0.1]);
+Fig.GUI.BoxPos      = [50, 20, 800, 60];
+Fig.GUI.BoxPos2     = [50, 100, 800, 150];
+Fig.GUI.LabelDim    = [100 25];
+
+Fig.Panel1.H        = uipanel('parent',Fig.fh,'units','pixels','position', Fig.GUI.BoxPos2,'Title','Parameters','FontSize',16);
 for n = 1:numel(Fig.Panel1.Strings)
-    UIcontrolpos        = [0.1, 0.1+(n*0.2), 0.5, 0.2];
-    Fig.Panel1.InH(n)   = uicontrol('Style','popupmenu','String',Fig.Panel1.Strings{n},'Value', Fig.Panel1.Values(n),'parent',Fig.Panel1.H, 'position', UIcontrolpos);
+    UIcontrolpos        = [20, 10+(n*20), 100, 15];
+    Fig.Panel1.Label(n) = uicontrol('Style','text','String',Fig.Controls.Labels{n}, 'parent',Fig.Panel1.H, 'HorizontalAlignment','Left','position', UIcontrolpos);
+    Fig.Panel1.InH(n)   = uicontrol('Style',Fig.Panel1.Types{n},'String',Fig.Panel1.Strings{n},'Value', Fig.Panel1.Values(n),'parent',Fig.Panel1.H, 'HorizontalAlignment','Left','position', UIcontrolpos+[120,0,50,0], 'Callback', {@GlobalParamSet, n});
 
 end
 
 %================= Plot audio waveform and spectrogram
 Fig.axh(2) = subplot(numel(ParamNames)+2,2,2);
-ph = plot(SampleTimes, audio.data(:,1));
-grid on;
-box off;
-hold on;
-Ylims = get(gca,'ylim');
-ph = patch([repmat(VocalOnsetTime,[1,2]), repmat(VocalOffsetTime,[1,2])], Ylims([1,2,2,1]), ones(1,4), 'facecolor', [1,0.5,0.5], 'edgecolor','none','facealpha', 0.5);
-title('Audio waveform','horizontalalignment','left')
-set(gca,'xticklabel',[]);
+if Fig.Controls.UseAudio == 1
+    ph = plot(SampleTimes, audio.data(:,1));
+    grid on;
+    box off;
+    hold on;
+    Ylims = get(gca,'ylim');
+    ph = patch([repmat(VocalOnsetTime,[1,2]), repmat(VocalOffsetTime,[1,2])], Ylims([1,2,2,1]), ones(1,4), 'facecolor', [1,0.5,0.5], 'edgecolor','none','facealpha', 0.5);
+    title('Audio waveform','horizontalalignment','left')
+    set(gca,'xticklabel',[]);
 
-Fig.axh(3) = subplot(numel(ParamNames)+2,2,4);
-SegmentLength = audio.rate/20;
-spectrogram(audio.data(:,1), SegmentLength,[],[], audio.rate, 'yaxis');
-hold on;
-plot(repmat(VocalOnsetTime,[1,2]), ylim, '-r','linewidth',2);
-title('Spectrogram','horizontalalignment','left')
-set(Fig.axh([2]),'xlim',[0, SampleTimes(end)]);
-xlabel('Time (ms)');
+
+    Fig.axh(3) = subplot(numel(ParamNames)+2,2,4);
+    SegmentLength = audio.rate/20;
+    spectrogram(audio.data(:,1), SegmentLength,[],[], audio.rate, 'yaxis');
+    hold on;
+    plot(repmat(VocalOnsetTime,[1,2]), ylim, '-r','linewidth',2);
+    title('Spectrogram','horizontalalignment','left')
+    set(Fig.axh([2]),'xlim',[0, SampleTimes(end)]);
+    xlabel('Time (ms)');
+else
+    axis off;
+    Fig.axh(3) = subplot(numel(ParamNames)+2,2,4);
+    axis off;
+end
 
 %================= Plot parameter time-courses
 Fig.ActiveParam = 1;
@@ -134,13 +150,12 @@ set(Fig.axh(1), 'units','pixels');
 FramePos            =  get(Fig.axh(1),'position');
 Fig.Slider.Pos      = [FramePos([1,2,3]),20]-[0 20 0 0];
 Fig.SliderHandle    = uicontrol('Style','slider','SliderStep',Fig.Slider.Step,'HorizontalAlignment','Left','pos',Fig.Slider.Pos,'Callback',{@NextFrame},'parent',Fig.fh);
-Fig.GUI.BoxPos      = [50,50,800, 100];
-Fig.GUI.LabelDim    = [100 25];
+
 Fig.GUI.Labels      = {'Load movie','Load parameters','Save movie','Save audio','Save parameters','Copy prev.'};
 Fig.GUI.InputStyles = {'pushbutton','pushbutton', 'pushbutton', 'pushbutton','pushbutton','pushbutton'};
 Fig.GUI.handle      = uibuttongroup('Title','Options','FontSize',16,'Units','pixels','Position',Fig.GUI.BoxPos);
 for i = 1:numel(Fig.GUI.Labels)
- 	Fig.GUI.InputPos{i}     = [20+(i-1)*(Fig.GUI.LabelDim(1)+10), 20, Fig.GUI.LabelDim];
+ 	Fig.GUI.InputPos{i}     = [20+(i-1)*(Fig.GUI.LabelDim(1)+10), 10, Fig.GUI.LabelDim];
     Fig.GUI.InputHandle(i)  = uicontrol('Style',Fig.GUI.InputStyles{i},'String',Fig.GUI.Labels{i},'HorizontalAlignment','Left','pos',Fig.GUI.InputPos{i},'parent',Fig.GUI.handle,'Callback',{@GUISelect,i});
 end
 
@@ -202,8 +217,7 @@ switch Indx2
     case 4 %============ Smooth timecourse
         Fig.ParamSmoothing(Indx1) = get(hObj, 'value');
         if Fig.ParamSmoothing(Indx1) == 1
-            FilterWidth = 7;
-            Params(Indx1).SmoothedTimecourse = smoothdata(Params(Indx1).Timecourse, 'gaussian', FilterWidth);
+            Params(Indx1).SmoothedTimecourse = smoothdata(Params(Indx1).Timecourse, 'gaussian', Params(Indx1).FilterWidth);
             set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).SmoothedTimecourse);
         elseif Fig.ParamSmoothing(Indx1) == 0
             set(Fig.ParamsH(Indx1+3), 'ydata', Params(Indx1).Timecourse);
@@ -339,13 +353,15 @@ function LoadMovieClip()
         
     catch %=============== Try method 2: videoreader.m
         videoobj          	= VideoReader(Mov.FullFilename);
-        AudioFilename       = fullfile(Mov.DefaultPath, 'OriginalWAVs', [Mov.Filename,'.wav']);
-        if ~exist(AudioFilename, 'file')
-            error('Audio file ''%s'' does not exist!', AudioFilename);
+        if Fig.Controls.UseAudio == 1
+            AudioFilename       = fullfile(Mov.DefaultPath, 'OriginalWAVs', [Mov.Filename,'.wav']);
+            if ~exist(AudioFilename, 'file')
+                error('Audio file ''%s'' does not exist!', AudioFilename);
+            end
+            aud                 = audioread(AudioFilename);                     % < Only works for .mp4 movie files
+            audio.data          = aud;
+            audio.rate          = round(size(audio.data,1)/videoobj.Duration);
         end
-      	aud                 = audioread(AudioFilename);                     % < Only works for .mp4 movie files
-        audio.data          = aud;
-        audio.rate          = round(size(audio.data,1)/videoobj.Duration);
         Mov.FPS             = videoobj.FrameRate;
         video.width         = videoobj.width;
         video.height        = videoobj.height;
@@ -432,6 +448,7 @@ function SelectParam(hObj, Evnt, Indx)
     set(Fig.axh(3+find(Fig.ParamValues(:, 1)==0)), 'color', [0.5,0.5,0.5]);
     set(Fig.axh(Indx+3), 'color', [1,0.5,0.5]);
     Fig.ActiveParam = Indx;
+    set(Fig.Panel1.InH(4), 'string', num2str(Params(Fig.ActiveParam).FilterWidth));
     for n = 1:numel(Params)
         setColor(Fig.LineH(n), Fig.LineColors(n,:));
     end
@@ -504,4 +521,24 @@ function SaveMovie(hObj, Evnt, Indx)
         writeVideo(vidObj, frame);
     end
     close(vidObj);
+end
+
+%================== Update gloabl parameters
+function GlobalParamSet(hObj, Evnt, Indx)
+    global video Fig Params Mov
+    switch Indx
+        case 1  %=========== Update vocalization
+            Fig.Controls.VocalType = get(hObj,'value');
+            
+        case 2  %=========== Update expression type
+            Fig.Controls.ExpressionType = get(hObj,'value');
+            
+        case 3  %=========== Update no frames to display
+            Fig.MaxFrames = str2num(get(hObj,'string'));
+            
+        case 4  %=========== Update filter kernel size
+            Params(Fig.ActiveParam).FilterWidth = str2num(get(hObj,'string'));
+            
+    end
+
 end
