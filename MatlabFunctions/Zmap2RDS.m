@@ -36,7 +36,7 @@ if nargin == 0
     ZmapFile  	= '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=100cm/DepthMaps/Macaque_Neutral_Haz0_Scale0.80_frame001.hdr';
     
 end
-OutputDir   = '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=100cm/RDS/';
+OutputDir   = '/Volumes/Kastner/aidan/BlenderRenders/SizeDistance_VD=60cm/RDS/';
 if nargin < 2
     ScaleDepth  = 1;
 end
@@ -68,22 +68,26 @@ if ~exist('RDSFile','var') || isempty(RDSFile)
     [~,filename] = fileparts(ZmapFile);
     RDSFile = fullfile(OutputDir, sprintf('RDS_%s_scale%d.png',filename, ScaleDepth*100));
 end
-if exist('Display','var') 
+if exist('Display','var') && ~isempty(Display)
     LeavePTBopen = 1;
     if isempty(Display)
         clear Display;
     end
-elseif ~exist('Display','var')
+elseif ~exist('Display','var') || isempty(Display)
+    
+	%Display             = DisplaySettings(1);
     LeavePTBopen        = 1;
-    Display.ScreenID 	= 0;
     Display.Stereomode  = 0;
+    Display.ScreenID    = max(Screen('Screens'));
+    Display.Dimensions  = [122.6, 71.8];
+    Screen('Preference', 'SkipSyncTests', 1);
 end
 
 %============== SET PARAMETERS
 InvertDepth = ScaleDepth/abs(ScaleDepth);       
 PlotData    = 0;
 IPD         = 3.5;                                      % Interpupillary distance of subject (cm)
-VD          = 100;                                       % Viewing distance of subject (cm)
+VD          = 60;                                       % Viewing distance of subject (cm)
 SaveAlpha   = 0;
 DisplayRes  = [size(DepthMap,2), size(DepthMap,1)];    	% Display resolution (pixels) [w, h]
 MapLims     = [size(DepthMap,1), size(DepthMap,2)];
@@ -132,10 +136,7 @@ DepthLims       = [min(ObjectPixels), max(ObjectPixels)];
 %MeanDistance    = VD + FilenameDist;
 
 
-if ~exist('Display','var')
-    Display = DisplaySettings(1);
-    Screen('Preference', 'SkipSyncTests', 1);
-end
+
 
 
 Display.Rect = [0,0,1920,1080].*[1,1,4,2];

@@ -12,17 +12,17 @@ global Mov Fig video audio Params
 
 %============== Set UI control pannels
 Fig.MaxFrames                   = 30;
+Fig.OutputFPS                   = 60;
 Fig.Controls.VocalTypes        	= {'Non-vocal','Vocal'};
 Fig.Controls.VocalType         	= 1;
-Fig.Controls.ExpressionTypes   	= {'Fear grimace','Open mouth threat','Yawn','Lip-smack','Coo','Tongue protrusion'};
+Fig.Controls.ExpressionTypes   	= {'BT: Bared teeth','OM: Open mouth','Y: Yawn','LS: Lip-smack','C: Coo','TP: Tongue protrusion','IC: Chewing', 'IL: Licking'};
 Fig.Controls.ExpressionType    	= 4;
 Fig.Controls.UseAudio          	= 0;
-Fig.Controls.Labels             = {'Vocalization','Expression type','Frames to display','Smoothing kernel'};
-Fig.Panel1.Values               = [Fig.Controls.VocalType, Fig.Controls.ExpressionType, Fig.MaxFrames, 1];
-Fig.Panel1.Types                = {'popupmenu','popupmenu','edit','edit'};
+Fig.Controls.Labels             = {'Vocalization','Expression type','Frames to display','Smoothing kernel','Input FPS','Output FPS'};
+Fig.Panel1.Values               = [Fig.Controls.VocalType, Fig.Controls.ExpressionType, Fig.MaxFrames, 1, 0, 0];
+Fig.Panel1.Types                = {'popupmenu','popupmenu','edit','edit','text','edit'};
 
-LoadMovieClip;      % User selects movie clip to load
-
+LoadMovieClip;                      % User selects movie clip to load
 
 %============== Check audio
 if Fig.Controls.UseAudio == 1
@@ -44,7 +44,7 @@ for n = 1:numel(ParamNames)
     Params(n).LinePoints    = repmat(StartPos,[1, Mov.NoFrames]);
     Params(n).FilterWidth   = 7;
 end
-Fig.Panel1.Strings 	= {Fig.Controls.VocalTypes, Fig.Controls.ExpressionTypes, num2str(Fig.MaxFrames), num2str(Params(1).FilterWidth)};
+Fig.Panel1.Strings 	= {Fig.Controls.VocalTypes, Fig.Controls.ExpressionTypes, num2str(Fig.MaxFrames), num2str(Params(1).FilterWidth), sprintf('%.2f', Mov.FPS), num2str(Fig.OutputFPS)};
 
 %================== Open figure
 ScreenRes   = get(0,'screensize');
@@ -56,7 +56,7 @@ Fig.fn      = title(sprintf('%s', strrep(Mov.Filename,'_',' ')),'fontsize',14);
 Fig.th      = text(10,10,sprintf('Frame %d', 1),'color',[1 1 1],'fontsize', 16);
 
 Fig.GUI.BoxPos      = [50, 20, 800, 60];
-Fig.GUI.BoxPos2     = [50, 100, 800, 150];
+Fig.GUI.BoxPos2     = [50, 100, 800, 180];
 Fig.GUI.LabelDim    = [100 25];
 
 Fig.Panel1.H        = uipanel('parent',Fig.fh,'units','pixels','position', Fig.GUI.BoxPos2,'Title','Parameters','FontSize',16);
@@ -64,7 +64,6 @@ for n = 1:numel(Fig.Panel1.Strings)
     UIcontrolpos        = [20, 10+(n*20), 100, 15];
     Fig.Panel1.Label(n) = uicontrol('Style','text','String',Fig.Controls.Labels{n}, 'parent',Fig.Panel1.H, 'HorizontalAlignment','Left','position', UIcontrolpos);
     Fig.Panel1.InH(n)   = uicontrol('Style',Fig.Panel1.Types{n},'String',Fig.Panel1.Strings{n},'Value', Fig.Panel1.Values(n),'parent',Fig.Panel1.H, 'HorizontalAlignment','Left','position', UIcontrolpos+[120,0,50,0], 'Callback', {@GlobalParamSet, n});
-
 end
 
 %================= Plot audio waveform and spectrogram
@@ -148,7 +147,7 @@ end
 Fig.Slider.Step     = [1/(Mov.NoFrames-1), 10/(Mov.NoFrames-1)];
 set(Fig.axh(1), 'units','pixels');
 FramePos            =  get(Fig.axh(1),'position');
-Fig.Slider.Pos      = [FramePos([1,2,3]),20]-[0 20 0 0];
+Fig.Slider.Pos      = [FramePos([1,2,3]),20]-[0 -20 0 0];
 Fig.SliderHandle    = uicontrol('Style','slider','SliderStep',Fig.Slider.Step,'HorizontalAlignment','Left','pos',Fig.Slider.Pos,'Callback',{@NextFrame},'parent',Fig.fh);
 
 Fig.GUI.Labels      = {'Load movie','Load parameters','Save movie','Save audio','Save parameters','Copy prev.'};
@@ -386,6 +385,17 @@ function LoadMovieClip()
     end
 end
 
+%================== 
+function NewCsvData = UpSample(CsvData)
+    global Params Mov Fig
+    SRfactor = round(Fig.OutputFPS/Mov.FPS);
+    NewCsvData(:,1) = interp(Mov.FrameTimes, SRfactor);
+    for c = 2:size(CsvData, 2)
+        NewCsvData(:,c) = interp(CsvData(:,c), SRfactor);
+    end
+end
+
+
 %================== Save parameters for Python import in Blender
 function SaveParams(hObj, Evnt, Indx)
     global Params Mov Fig
@@ -539,6 +549,8 @@ function GlobalParamSet(hObj, Evnt, Indx)
         case 4  %=========== Update filter kernel size
             Params(Fig.ActiveParam).FilterWidth = str2num(get(hObj,'string'));
             
+        case 6  %=========== Update output frame rate
+            Fig.OutputFPS = str2double(get(hObj,'string'));
     end
 
 end

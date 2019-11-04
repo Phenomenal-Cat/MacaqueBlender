@@ -71,19 +71,35 @@ Render              = 0                                                     # 0 
 FPS                 = 30                                                    # Frames per second
 DurPerCycle         = 2                                                     # How many seconds per cycle?
 NoFrames            = FPS*DurPerCycle
-Eccentricities      = [0]	                                                
-ViewingDistance     = 100                                                    # Distance of subject from screen (cm) 
-Scales              = [0.666, 1.0, 1.333]                                   # Physical scale of object (proportion)
-Depths              = [-20, 0, 20] 						                    # Set object depth distance from origin (centimeters)
+Eccentricities      = [0]	  
+
+
+ViewingDistance     = 95                                                    # Distance of subject from screen (cm) 
+MaxDepth            = 20                                                    # Distance of avatar relative to screen (cm)
+NoLevels            = 3
+Depths              = np.linspace(-MaxDepth, MaxDepth, NoLevels)            # Object depth distances from origin (centimeters)
+Distances           = ViewingDistance + Depths                              # Object distance from camera (cm)
+DepthProp           = Depths/np.tile(ViewingDistance, NoLevels)             # Depths as proportion of viewing distance
+#Scales              = DepthProp + np.tile(1,NoLevels)                       # Physical scales of object (proportion of original life size)
+
+RetinalSizes        = np.linspace(1, 19, 10)
+Scales              = []
+for r in range(0, len(RetinalSizes)):
+    Scales.append([])
+    for d in range(0, len(Distances)):
+        Scales[r].append( math.tan(math.radians(RetinalSizes[r]/2))*Distances[d]*2/10)
+
+
+#Scales              = [0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0]
 LateralExtent       = [-20, 20]                                             # Set maximum lateral motion (cm)
 
 #=========== Calculate scale and distance per frame
-AllScales           = np.linspace(Scales[0], Scales[2], NoFrames)
-AllDepths           = np.linspace(Depths[0], Depths[2], NoFrames)
-ConstantRetinalSize = 2*math.atan((1/2)/ViewingDistance)
-AllScales_CRS       = []
-for f in range(0, len(AllScales)): 
-    AllScales_CRS.append(math.tan(ConstantRetinalSize)*(ViewingDistance-AllDepths[len(AllDepths)-f-1]))
+#AllScales           = np.linspace(Scales[0], Scales[2], NoFrames)
+#AllDepths           = np.linspace(Depths[0], Depths[2], NoFrames)
+#ConstantRetinalSize = 2*math.atan((1/2)/ViewingDistance)
+#AllScales_CRS       = []
+#for f in range(0, len(AllScales)): 
+#    AllScales_CRS.append(math.tan(ConstantRetinalSize)*(ViewingDistance-AllDepths[len(AllDepths)-f-1]))
 	
 InitBlendScene(SetupGeometry, StereoFormat, ViewingDistance)            # Initialize scene
 #AddDepthArray()                                                         # Add depth array?
@@ -141,77 +157,100 @@ if ShowBody == 0:
 # head.pose.bones['Head'].constraints['IK'].mute                = True          # Turn off constraints on head orientation
 # head.pose.bones['HeadTracker'].constraints['IK'].influence    = 0             
 
+#========================== Render grid stimuli
+#ob = 1
+#for s in Scales:   
+#    for d in Depths:    
+#        bpy.context.scene.frame_set(FrameCount)
+#        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))              # Set FIXED scale               
+#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="scale")                   
+#        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, d/100, 0))       # Set FIXED distance
+#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="location")  
+#        FrameCount = SetKeyFrames(FrameCount)     
+        
+#========================== Render grid stimuli
+ob = 0
+for rs in range(0, len(RetinalSizes)):   
+    for d in range(0, len(Depths)):    
+        s = Scales[rs][d]
+        bpy.context.scene.frame_set(FrameCount)
+        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))              # Set FIXED scale               
+        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="scale")                   
+        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, Depths[d]/100, 0))       # Set FIXED distance
+        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="location")  
+        FrameCount = SetKeyFrames(FrameCount)     
+        
 #========================== Begin rendering loop
-for ob in range(0, len(Objects)):                                               # Loop through object types
-    
-    for obj in ObjectLabel:
-        makeInvisible(bpy.data.objects[obj], 0)                                 # Hide all objects
-    makeInvisible(bpy.data.objects[ObjectLabel[ob]], 1)                         # Un-hide current object
-    if SetKeyframes == 1:
-        bpy.context.object.keyframe_insert(data_path="hide_render")
-    
-    #=========== Render depth movies
-    for s in Scales:                                                            # Loop through selected fixed scales
-        bpy.context.scene.frame_set(FrameCount)
-        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))          # Set FIXED scale               
-        bpy.context.object.keyframe_insert(data_path="scale")                   
-        for f in range(0, NoFrames):                                           # Loop through distances
-            bpy.context.scene.frame_set(FrameCount)
-            bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, AllDepths[f]/100, 0)) 
+#for ob in range(0, len(Objects)):                                               # Loop through object types
+#    
+#    for obj in ObjectLabel:
+#        makeInvisible(bpy.data.objects[obj], 0)                                 # Hide all objects
+#    makeInvisible(bpy.data.objects[ObjectLabel[ob]], 1)                         # Un-hide current object
+#    if SetKeyframes == 1:
+#        bpy.context.object.keyframe_insert(data_path="hide_render")
+#    
+#    #=========== Render depth movies
+#    for s in Scales:                                                            # Loop through selected fixed scales
+#        bpy.context.scene.frame_set(FrameCount)
+#        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))          # Set FIXED scale               
+#        bpy.context.object.keyframe_insert(data_path="scale")                   
+#        for f in range(0, NoFrames):                                           # Loop through distances
+#            bpy.context.scene.frame_set(FrameCount)
+#            bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, AllDepths[f]/100, 0)) 
 
-            if SetKeyframes == 1:
-                FrameCount = SetKeyFrames(FrameCount)     
-            else: 
-                for z in [0,1]:
-                    FileFormat = SetDepthMapMode(z)
-                    Filename = "%s_%s_Haz%d_Scale%.2f_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, s, f+1, FileFormat)
-                    RenderFrame(Filename, RenderDir, Render)
-        
-    #=========== Render scaling movies
-    for d in Depths:                                                                # Loop through selected fixed distances
-        bpy.context.scene.frame_set(FrameCount)
-        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, d/100, 0))       # Set FIXED distance
-        bpy.context.object.keyframe_insert(data_path="location")  
-        for f in range(0, NoFrames):                                                # Loop through scales
-            bpy.context.scene.frame_set(FrameCount)
-            bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((AllScales[f], AllScales[f], AllScales[f]))
-            
-            if SetKeyframes == 1:
-                FrameCount = SetKeyFrames(FrameCount)
-            else: 
-                for z in [0,1]:
-                    FileFormat = SetDepthMapMode(z)
-                    Filename = "%s_%s_Haz%d_Dist%d_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, d, f+1, FileFormat)
-                    RenderFrame(Filename, RenderDir, Render)
-    
-    #============ Render CONSTANT RETINAL SIZE conditions
-    for f in range(0, NoFrames):        
-        bpy.context.scene.frame_set(FrameCount)           
-        bpy.data.objects[ObjectLabel[ob]].scale      = mu.Vector((AllScales_CRS[f], AllScales_CRS[f], AllScales_CRS[f]))
-        bpy.data.objects[ObjectLabel[ob]].location   = mu.Vector((0, AllDepths[f]/100, 0)) 
-        
-        if SetKeyframes == 1:
-            FrameCount = SetKeyFrames(FrameCount)
-        else:
-            for z in [0,1]:
-                FileFormat = SetDepthMapMode(z)
-                Filename = "%s_%s_Haz%d_ConstantRetinalSize_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, f+1, FileFormat)
-                RenderFrame(Filename, RenderDir, Render)
+#            if SetKeyframes == 1:
+#                FrameCount = SetKeyFrames(FrameCount)     
+#            else: 
+#                for z in [0,1]:
+#                    FileFormat = SetDepthMapMode(z)
+#                    Filename = "%s_%s_Haz%d_Scale%.2f_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, s, f+1, FileFormat)
+#                    RenderFrame(Filename, RenderDir, Render)
+#        
+#    #=========== Render scaling movies
+#    for d in Depths:                                                                # Loop through selected fixed distances
+#        bpy.context.scene.frame_set(FrameCount)
+#        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, d/100, 0))       # Set FIXED distance
+#        bpy.context.object.keyframe_insert(data_path="location")  
+#        for f in range(0, NoFrames):                                                # Loop through scales
+#            bpy.context.scene.frame_set(FrameCount)
+#            bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((AllScales[f], AllScales[f], AllScales[f]))
+#            
+#            if SetKeyframes == 1:
+#                FrameCount = SetKeyFrames(FrameCount)
+#            else: 
+#                for z in [0,1]:
+#                    FileFormat = SetDepthMapMode(z)
+#                    Filename = "%s_%s_Haz%d_Dist%d_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, d, f+1, FileFormat)
+#                    RenderFrame(Filename, RenderDir, Render)
+#    
+#    #============ Render CONSTANT RETINAL SIZE conditions
+#    for f in range(0, NoFrames):        
+#        bpy.context.scene.frame_set(FrameCount)           
+#        bpy.data.objects[ObjectLabel[ob]].scale      = mu.Vector((AllScales_CRS[f], AllScales_CRS[f], AllScales_CRS[f]))
+#        bpy.data.objects[ObjectLabel[ob]].location   = mu.Vector((0, AllDepths[f]/100, 0)) 
+#        
+#        if SetKeyframes == 1:
+#            FrameCount = SetKeyFrames(FrameCount)
+#        else:
+#            for z in [0,1]:
+#                FileFormat = SetDepthMapMode(z)
+#                Filename = "%s_%s_Haz%d_ConstantRetinalSize_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, f+1, FileFormat)
+#                RenderFrame(Filename, RenderDir, Render)
 
-    #============ Render LATERAL motion conditions
-    bpy.context.scene.frame_set(FrameCount)   
-    bpy.data.objects[ObjectLabel[ob]].scale      = mu.Vector((1, 1, 1))
-    bpy.context.object.keyframe_insert(data_path="scale")  
-    for f in range(0, NoFrames):       
-        bpy.context.scene.frame_set(FrameCount)   
-        bpy.data.objects[ObjectLabel[ob]].location   = mu.Vector((AllDepths[f]/100, 0, 0)) 
-        bpy.context.object.keyframe_insert(data_path="location")  
-        if SetKeyframes == 1:
-            FrameCount = SetKeyFrames(FrameCount)
-        else:
-            for z in [0,1]:
-                FileFormat = SetDepthMapMode(z)
-                Filename = "%s_%s_Haz%d_LateralMotion_Dist%d_Scale%.2f_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, 0, 1, f+1, FileFormat)
-                RenderFrame(Filename, RenderDir, Render)
-            
+#    #============ Render LATERAL motion conditions
+#    bpy.context.scene.frame_set(FrameCount)   
+#    bpy.data.objects[ObjectLabel[ob]].scale      = mu.Vector((1, 1, 1))
+#    bpy.context.object.keyframe_insert(data_path="scale")  
+#    for f in range(0, NoFrames):       
+#        bpy.context.scene.frame_set(FrameCount)   
+#        bpy.data.objects[ObjectLabel[ob]].location   = mu.Vector((AllDepths[f]/100, 0, 0)) 
+#        bpy.context.object.keyframe_insert(data_path="location")  
+#        if SetKeyframes == 1:
+#            FrameCount = SetKeyFrames(FrameCount)
+#        else:
+#            for z in [0,1]:
+#                FileFormat = SetDepthMapMode(z)
+#                Filename = "%s_%s_Haz%d_LateralMotion_Dist%d_Scale%.2f_frame%03d%s" % (Objects[ob], ExpStr[ExpNo], Haz, 0, 1, f+1, FileFormat)
+#                RenderFrame(Filename, RenderDir, Render)
+#            
 print('Rendering comleted!')
