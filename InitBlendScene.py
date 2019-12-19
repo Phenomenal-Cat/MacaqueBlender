@@ -67,7 +67,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=100):
         SqueezeFrame        = 0    
         
     elif SetupGeometry == 8:                        #============ For Kastner lab 65" LG 65E6
-        MonitorSize        = [146.0, 88.0]                              # Set physical screen dimensions (centimeters)
+        MonitorSize        = [143.0, 80.5]                              # Set physical screen dimensions (centimeters)
         Resolution         = [3840, 2160]                               # Set render resolution per eye (pixels)
         SqueezeFrame       = 1                                          # Horizontal squeee for SBS
            

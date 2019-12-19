@@ -90,7 +90,7 @@ for r in range(0, len(RetinalSizes)):
         Scales[r].append( math.tan(math.radians(RetinalSizes[r]/2))*Distances[d]*2/10)
 
 
-#Scales              = [0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0]
+Scales              = np.linspace(0.1, 3.0, 30)
 LateralExtent       = [-20, 20]                                             # Set maximum lateral motion (cm)
 
 #=========== Calculate scale and distance per frame
@@ -158,27 +158,28 @@ if ShowBody == 0:
 # head.pose.bones['HeadTracker'].constraints['IK'].influence    = 0             
 
 #========================== Render grid stimuli
-#ob = 1
-#for s in Scales:   
-#    for d in Depths:    
-#        bpy.context.scene.frame_set(FrameCount)
-#        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))              # Set FIXED scale               
-#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="scale")                   
-#        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, d/100, 0))       # Set FIXED distance
-#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="location")  
-#        FrameCount = SetKeyFrames(FrameCount)     
-        
-#========================== Render grid stimuli
 ob = 0
-for rs in range(0, len(RetinalSizes)):   
-    for d in range(0, len(Depths)):    
-        s = Scales[rs][d]
+
+for s in Scales:   
+    for d in Depths:    
         bpy.context.scene.frame_set(FrameCount)
         bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))              # Set FIXED scale               
         bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="scale")                   
-        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, Depths[d]/100, 0))       # Set FIXED distance
+        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, d/100, 0))       # Set FIXED distance
         bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="location")  
         FrameCount = SetKeyFrames(FrameCount)     
+        
+#========================== Render grid stimuli
+#ob = 0
+#for rs in range(0, len(RetinalSizes)):   
+#    for d in range(0, len(Depths)):    
+#        s = Scales[rs][d]
+#        bpy.context.scene.frame_set(FrameCount)
+#        bpy.data.objects[ObjectLabel[ob]].scale = mu.Vector((s, s, s))              # Set FIXED scale               
+#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="scale")                   
+#        bpy.data.objects[ObjectLabel[ob]].location = mu.Vector((0, Depths[d]/100, 0))       # Set FIXED distance
+#        bpy.data.objects[ObjectLabel[ob]].keyframe_insert(data_path="location")  
+#        FrameCount = SetKeyFrames(FrameCount)     
         
 #========================== Begin rendering loop
 #for ob in range(0, len(Objects)):                                               # Loop through object types

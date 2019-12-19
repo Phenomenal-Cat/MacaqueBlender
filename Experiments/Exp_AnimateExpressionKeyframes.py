@@ -52,9 +52,10 @@ def GetAllParamsFiles():
 #    os.chdir(MovieDir)
 #    MovieFiles =  sorted(glob.glob("*.mpg"))
 #    return (DataDir, DataFiles, MovieDir, MovieFiles, OutputDir)
-    #DataFile = DataDir + 'Spice_Threat_02.csv'
-    #DataFile = DataDir + 'BeckRaw_02-01-02-Lipsmack.csv'
-    DataFile = DataDir + 'AM_Stumpy_Neutral_1-120.csv'
+    DataFile = DataDir + 'Chewing_MT_S03E01_1638_1.csv'
+    #DataFile = DataDir + 'AM_Stumpy_Neutral_V2.csv'
+    #DataFile = DataDir + 'Spice_Threat_01_v2.csv'
+    #DataFile = DataDir + 'BeckRaw_02-01-02-LipsmackV3_2sec.csv'
     return DataFile
 
 #======================= READ PARAMS DATA
@@ -99,6 +100,7 @@ BoneDirection   = [1,           1,          1,      1,         -1,         1,   
 BoneWeight      = [0.007,       0.04,       0.02,   0.02,       0.02,       0.02,       0.02,       1]                  # Maximum values for each bone position
 BoneOffset      = [0,           0,          0,      0.02,       0,          0,          0,          0]                  
 
+TongueProtrude    = 0
 if AllData[0][5] == 'lipsmack':
     BoneNames[4]      = 'LipSmack'
     BoneWeight[1]     = 0.022
@@ -111,6 +113,8 @@ if AllData[0][5] == 'lipsmack':
     bpy.data.objects['TeethUp'].hide_render     = True
     bpy.data.objects['Tongue_1'].hide_render    = False
     
+elif AllData[0][5] == 'chew':
+    BoneNames[4]      = 'Chew'
 
 #if IsCoo == 1:                          # If the expression being used is 'coo'
 #    BoneWeight[2] = 0                   # Turn off jaw movements
@@ -131,18 +135,17 @@ if AllData[0][5] == 'lipsmack':
 #    head.pose.bones['blink'].location   = mu.Vector((0,0,0.007*ExpMicroWeights[mexp, 0]))   # Close eye lids (blink)
 #    head.pose.bones['ears'].location    = mu.Vector((0,0.04*ExpMicroWeights[mexp, 1],0))    # Retract ears
 #    head.pose.bones['eyebrow'].location = mu.Vector((0,0,-0.02*ExpMicroWeights[mexp, 2]))   # Raise brow
-#    head.pose.bones['EyesTracker'].scale = mu.Vector((0, 0.5, 0))    # Pupil dilation/ constriction
+#    head.pose.bones['EyesTracker'].scale = mu.Vector((0, 1*ExpMicroWeights[mexp, 3], 0))    # Pupil dilation/ constriction
 
 #============= Frame rate
 FrameDur        = float(AllData[2][0])                              # Get duration of each frame of data
 FPS             = 1/FrameDur                                        # Calculate data frame rate
 OutputFPS       = 60                                                # Specify desired output frame rate
-FrameRatio      = 1                                                 # Calculate ratio of input vs output frame rates
+FrameRatio      = 2                                                 # Calculate ratio of input vs output frame rates
 
 head            = bpy.data.objects["HeaDRig"]                       # Get handle for macaque avatar head
 head2           = bpy.context.object
-head.pose.bones['EyesTracker'].scale = mu.Vector((0, 0.5, 0))    # Pupil dilation/ constriction
-
+    
 ##============== For 'coo' vocalizations...
 #if IsCoo == 1:
 #    bpy.data.objects['TeethDown'].hide_render   = True
@@ -181,29 +184,31 @@ for indx in range(0, len(HeadAzimuths)):
         SetFrameIndx = (indx*FrameRatio*NoFrames)+ 1+(frame-1)*FrameRatio
         bpy.context.scene.frame_set(SetFrameIndx) 
 
-        for exp in range(0, len(BoneNames)):                       
+        for exp in range(0, len(BoneNames)):   
+           
             if AllData[frame][exp+1]=='NaN':
                 AllData[frame][exp+1] = 0                    
                      
             if exp < 7:  #=============== For each bone...
                 
-                if exp == 0: # For blink, move gaze elevation down
-                    if (float(AllData[frame][exp+1]) > 0.1):
-                        Gel = 0.1 * (1- float(AllData[frame][exp+1]))
-                    else:
-                        Gel = 1
-                    
                 if (exp == 4) & (AllData[0][5] == 'lipsmack'):
                     #print('Data =' + AllData[frame][exp+1])
                     #AllData[frame][exp+1] = float(AllData[frame][exp+1])
                     bpy.data.shape_keys["Key.001"].key_blocks["MacaqueHeadNG_1expressionsSmackClosed"].value = float(AllData[frame][exp+1])                        # Set lip-smack shape key value 
                     bpy.data.shape_keys["Key.001"].key_blocks["MacaqueHeadNG_1expressionsSmackClosed"].keyframe_insert('value')
-                    bpy.data.objects['Tongue_1'].location           = TongueStart + (TongueDiff*float(AllData[frame][2]))
-                    bpy.data.objects['Tongue_1'].rotation_euler[0]  = math.radians(TongueRot*float(AllData[frame][2]))
-                    bpy.data.objects['Tongue_1'].scale[2]           = 0.12 + (0.02*float(AllData[frame][2]))
-                    bpy.data.objects['Tongue_1'].keyframe_insert('location')
-                    bpy.data.objects['Tongue_1'].keyframe_insert('rotation_euler')
-                    bpy.data.objects['Tongue_1'].keyframe_insert('scale')
+                    
+                    if TongueProtrude == 1:
+                        bpy.data.objects['Tongue_1'].location           = TongueStart + (TongueDiff*float(AllData[frame][2]))
+                        bpy.data.objects['Tongue_1'].rotation_euler[0]  = math.radians(TongueRot*float(AllData[frame][2]))
+                        bpy.data.objects['Tongue_1'].scale[2]           = 0.12 + (0.02*float(AllData[frame][2]))
+                        bpy.data.objects['Tongue_1'].keyframe_insert('location')
+                        bpy.data.objects['Tongue_1'].keyframe_insert('rotation_euler')
+                        bpy.data.objects['Tongue_1'].keyframe_insert('scale')
+                    
+                elif (exp == 4) & (AllData[0][5] == 'chew'):
+                    bpy.data.shape_keys["Key.001"].key_blocks["MacaqueHeadNG_1expressionsChewing"].value = float(AllData[frame][exp+1])  # Set chew shape key value 
+                    bpy.data.shape_keys["Key.001"].key_blocks["MacaqueHeadNG_1expressionsChewing"].keyframe_insert('value')
+                    
                     
                 else :
                     Vector                                          = mu.Vector((0,0,0))                                                                    # Initialize location vector
@@ -220,25 +225,21 @@ for indx in range(0, len(HeadAzimuths)):
                 head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
                 head.pose.bones['HeadTracker'].keyframe_insert(data_path="location")   
                                                                                                                  
-        #=============== Set gaze position
-        GazeXYZ         = GazeLookAt(Gel, GazeAzimuths[indx])      
-        GazeYoffset     = (0.12 + HeadXYZ[1] + head.location[1])*Gel                   
-        head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, GazeYoffset, 0))
-        #head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, HeadXYZ[1] + head.location[1], 0))
-        head.pose.bones['EyesTracker'].keyframe_insert(data_path="location", index=-1)     
-
-        #=============== print some info 
-        print('Head Y (cm) = ' + str((0.12 + HeadXYZ[1] + head.location[1])*100))
-        print('Blink = ' + AllData[frame][1])
-        print('Gel = ' + str(Gel))
-        print('Gaze Y (cm) = ' + str(GazeXYZ[1]*100))
-        print('Gaze offset Y (cm) = ' + str(GazeYoffset*100))
+            #=============== Set gaze position
+#            BlinkProp = float(AllData[frame][1])
+#            if BlinkProp > 0.25:
+#                BlinkCorrect = -(0.16 + HeadXYZ[1] + head.location[1])
+#            else:
+            BlinkCorrect = 0
+            GazeXYZ = GazeLookAt(0, GazeAzimuths[indx])                     
+            #head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, 0.12 + HeadXYZ[1] + head.location[1], 0))          
+            head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, 0.16 + HeadXYZ[1] + head.location[1] + BlinkCorrect, 0))
+            head.pose.bones['EyesTracker'].keyframe_insert(data_path="location", index=-1)     
 
 
         #======= Insert keyframe
         if AddKeyframes == 1:
             print('Inserting keyframe %d of %d' % (frametotal, scn.frame_end ))
-            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
             
         elif AddKeyframes == 0:
             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
@@ -252,6 +253,15 @@ for indx in range(0, len(HeadAzimuths)):
 
         frame += 1
         frametotal += 1 
+    
+    #====== Set final frame of sequence    
+    SetFrameIndx = ((indx*FrameRatio*NoFrames)+ 1+(frame-1)*FrameRatio)-1
+    bpy.context.scene.frame_set(SetFrameIndx) 
+    head.pose.bones['HeadTracker'].location = HeadXYZ + head.location
+    head.pose.bones['HeadTracker'].keyframe_insert(data_path="location")  
+    head.pose.bones['EyesTracker'].location = GazeXYZ + mu.Vector((0, 0.16 + HeadXYZ[1] + head.location[1] + BlinkCorrect, 0))
+    head.pose.bones['EyesTracker'].keyframe_insert(data_path="location", index=-1)  
+    
 
 print("Rendering completed!\n")
 

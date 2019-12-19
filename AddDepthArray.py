@@ -40,9 +40,9 @@ RefObjColor         = 'random'      # Randomize reference object's color?
 RefObjOrient        = 'random'      # Randomize reference object's orientations?
 RefObjBW            = 1             # Make reference object colors black and white?
 RefObjSize          = []            # Randomize reference object's size?
-RefObjRadius        = 0.01          # Scaling to apply to objects
-RefObjDensity       = 0.05          # Approximate proportion of available volume to fill with objects
-RefObjFile          = Prefix[0] + 'murphya/MacaqueFace3D/GameRenders/Golf_Ball.obj'            # Full path of mesh to use as reference objects
+RefObjRadius        = 0.001          # Scaling to apply to objects
+RefObjDensity       = 0.01          # Approximate proportion of available volume to fill with objects
+RefObjFile          = '/Volumes/Kastner-1/aidan/Blender/Golf_Ball.obj'            # Full path of mesh to use as reference objects
 #RefObjFile          = Prefix + 'murphya/MacaqueFace3D/GameRenders/RubiksCube.obj'
 
 #============ Set reference object material properties
