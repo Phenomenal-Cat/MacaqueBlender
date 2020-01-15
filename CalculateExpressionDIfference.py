@@ -20,15 +20,23 @@ new_obj.data    = TargetMesh.data.copy()
 TargetVerts     = new_obj.data.vertices                         
 
 VertDiffs       = [[]]
+VertNorms       = [[]]
 print('Neutral verts    = ' + str(len(NeutralVerts)))
 print('Target verts     = ' + str(len(TargetVerts)))
 for v in range(0, len(NeutralVerts)):                               # For each vertex...
     if v == 0:
-        VertDiffs[0]        = NeutralVerts[v].co - ExpVerts[v].co   # Calculate offset distance
+        VertDiffs[0]    = NeutralVerts[v].co - ExpVerts[v].co   # Calculate offset distance
+        VertNorms[0]    = NeutralVerts[v].normal.to_4d()        # Get source vertex normal
+        
+        
     else:
         VertDiffs.append( NeutralVerts[v].co - ExpVerts[v].co )
+        VertNorms.append( NeutralVerts[v].normal.to_4d() )          # Get source vertex normal
         
-    TargetVerts[v].co   = TargetVerts[v].co + VertDiffs[v]      # Apply this offset to the target mesh
+        
+        
+        
+    TargetVerts[v].co   = TargetVerts[v].co + VertDiffs[v]          # Apply this offset to the target mesh
 
 bpy.context.scene.objects.link(new_obj)
 

@@ -52,9 +52,10 @@ def GetAllParamsFiles():
 #    os.chdir(MovieDir)
 #    MovieFiles =  sorted(glob.glob("*.mpg"))
 #    return (DataDir, DataFiles, MovieDir, MovieFiles, OutputDir)
-    DataFile = DataDir + 'Chewing_MT_S03E01_1638_1.csv'
+    #DataFile = DataDir + 'Chewing_MT_S03E01_1638_1.csv'
     #DataFile = DataDir + 'AM_Stumpy_Neutral_V2.csv'
-    #DataFile = DataDir + 'Spice_Threat_01_v2.csv'
+    DataFile = DataDir + 'Spice_Threat_01_v2.csv'
+    #DataFile = DataDir + 'AM_20180930_Vivy_FearGrimace_1_v3.csv'
     #DataFile = DataDir + 'BeckRaw_02-01-02-LipsmackV3_2sec.csv'
     return DataFile
 
