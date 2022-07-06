@@ -13,7 +13,7 @@ import math
 import numpy
 
 
-def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=100):
+def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=50):
  
     #============ Set viewing geometry
     HemiProjection          = 0
@@ -101,7 +101,7 @@ def InitBlendScene(SetupGeometry=2, StereoFormat=1, ViewingDistance=100):
     Scene.render.resolution_y                   = Resolution[1]
     Scene.render.resolution_percentage          = 100
     Scene.render.use_stamp                      = False							# Turn render stamps off
-    Scene.render.display_mode                   = 'SCREEN'
+    #Scene.render.display_mode                   = 'SCREEN'
     Scene.render.image_settings.color_depth     = '8'                           # Set color bit-depth (8 or 16 for PNG)
     Scene.render.use_placeholder                = True                          
     Scene.cycles.film_transparent               = True
