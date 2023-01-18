@@ -14,7 +14,7 @@ global Mov Fig video audio Params
 Fig.MaxFrames                   = 30;
 Fig.OutputFPS                   = 60;
 Fig.Controls.VocalTypes        	= {'Non-vocal','Vocal'};
-Fig.Controls.VocalType         	= 1;
+Fig.Controls.VocalType         	= 2;
 Fig.Controls.ExpressionTypes   	= {'BT: Bared teeth','OM: Open mouth','Y: Yawn','LS: Lip-smack','C: Coo','TP: Tongue protrusion','IC: Chewing', 'IL: Licking'};
 Fig.Controls.ExpressionType    	= 4;
 Fig.Controls.UseAudio          	= 0;
