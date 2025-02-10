@@ -1,0 +1,10 @@
+﻿ParamName,MatDescription,MatName,NodeName,Index,Default,Lim_L,Lim_U
+SkinColor,Skin redness,Faceskin,Mix Shader.001,0,0.682,0,1
+SkinColor,Skin gloss,Faceskin,Mix Shader.003,0,0.05,0,0.15
+Skintexture,Skin wrinkles,Faceskin,Displacement,2,0.3,0.2,1
+FurColor,Face fur hue,furface,Hue/Saturation/Value,0,0.5,0.48,0.52
+FurColor,Face fur sat,furface,Hue/Saturation/Value,1,1,0.5,1.5
+FurColor,Body fur hue,furbody.001,Hue/Saturation/Value,0,0.5,0.48,0.52
+FurColor,Body fur sat,furbody.001,Hue/Saturation/Value,1,1,0.5,1.5
+EyeColor,Eye color,Sclera_and_Iris,Hue/Saturation/Value,0,0.5,0.5,0.5
+EyeColor,Eye sat,Sclera_and_Iris,Hue/Saturation/Value,1,1,1,1

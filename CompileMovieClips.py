@@ -13,14 +13,17 @@ from sys import platform
 from random import shuffle
 
 
-MovieDir        = "/Volumes/Seagate Backup 1/Stimuli/Movies/MonkeyThieves/MacaqueClips/FacialDeformities/"
+#MovieDir        = "/Volumes/Seagate Backup 1/Stimuli/Movies/MonkeyThieves/MacaqueClips/FacialDeformities/"
+MovieRootDir    = "/Users/murphyap/Documents/NIF_Stimuli/DSCS_Clipped/DSCS_Identity/"
+MovieSubDir     = "Cats"
+MovieDir        = os.path.join(MovieRootDir, MovieSubDir)
 InputFormat     = ".mp4"
 
 #=========== Render settings
 NoPermutations      = 1                         # How many blocks/ output movies to generate
-DurPerClip          = 1.5                       # Individual clip duration (seconds)
-InterClipInterval   = 1.0                         # Duration of blank interval between clips
-BlockDuration       = 20                        # Duration of full concatenated block (seconds)
+DurPerClip          = 2                       # Individual clip duration (seconds)
+InterClipInterval   = int(0)                         # Duration of blank interval between clips
+BlockDuration       = 40                        # Duration of full concatenated block (seconds)
 BackgroundRGB       = (0.5, 0.5, 0.5)           # Set background color (if not full screen)
 AudioOn             = 0                         # Encode original audio?
 AddPhotodiode       = 0                         # Add photodiode marker for stimulus onsets?
@@ -56,7 +59,7 @@ S.render.resolution_y           = 1080
 S.render.resolution_percentage  = 100
 S.render.fps                    = 30
 S.render.fps_base               = 1.0
-S.frame_start                   = 1
+S.frame_start                   = int(1)
 MovieChannel                    = 1             # Which video sequence editor channel to put movie clips on
 TotalFrames                     = BlockDuration*S.render.fps
 
@@ -64,12 +67,12 @@ TotalFrames                     = BlockDuration*S.render.fps
 for b in range(NoPermutations):
     shuffle(ClipOrder)                          # Pseudo-randomly shuffle order of clips
     
-    CurrentFrame = 0
+    CurrentFrame = int(0)
     for c in range(NoClips):             
         ClipName        = "Clip %d" % c       
         ClipFile        = fileList[ClipOrder[c]]
-        CurrentFrame    = CurrentFrame+(S.render.fps*(DurPerClip+InterClipInterval))
-        SE.sequences.new_movie(ClipName, ClipFile, b+2, CurrentFrame)
+        CurrentFrame    = CurrentFrame+int(S.render.fps)*(DurPerClip+InterClipInterval)
+        SE.sequences.new_movie(ClipName, ClipFile, int(b)+2, CurrentFrame)
         SE.sequences_all[ClipName].frame_final_duration = S.render.fps*DurPerClip
         
         
